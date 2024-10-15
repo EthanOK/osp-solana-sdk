@@ -22,12 +22,56 @@ export class OSPProgram {
   }
 
   async getStorageAccountInfo(account: PublicKey): Promise<any> {
-    return await this.program.account.ospStorage.fetch(account);
+    try {
+      return await this.program.account.ospStorage.fetch(account);
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
   }
 
   async getProfileAccountInfo(account: PublicKey): Promise<any> {
-    return await this.program.account.profile.fetch(account);
+    try {
+      return await this.program.account.profile.fetch(account);
+    } catch (error) {
+      console.log(`${account} not is profile account`);
+      return null;
+    }
   }
 
-  
+  async getCommunityAccountInfo(account: PublicKey): Promise<any> {
+    try {
+      return await this.program.account.community.fetch(account);
+    } catch (error) {
+      console.log(`${account} not is community account`);
+      return null;
+    }
+  }
+
+  async getActivityAccountInfo(account: PublicKey): Promise<any> {
+    try {
+      return await this.program.account.activity.fetch(account);
+    } catch (error) {
+      console.log(`${account} not is activity account`);
+      return null;
+    }
+  }
+
+  async getCommentAccountInfo(account: PublicKey): Promise<any> {
+    try {
+      return await this.program.account.comment.fetch(account);
+    } catch (error) {
+      console.log(`${account} not is comment account`);
+      return null;
+    }
+  }
+
+  async getMegaphoneAccountInfo(account: PublicKey): Promise<any> {
+    try {
+      return await this.program.account.megaphone.fetch(account);
+    } catch (error) {
+      console.log(`${account} not is megaphone account`);
+      return null;
+    }
+  }
 }
