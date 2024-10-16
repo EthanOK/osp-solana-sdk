@@ -51,9 +51,15 @@ async function main() {
   );
   console.log("megaphoneAccount:\n", megaphoneAccount);
 
-  const tx = await program.initializeStorage();
-  console.log("initializeStorage tx:", tx);
-  
+  // const initializeStorage_tx = await program.initializeStorage();
+  // console.log("initializeStorage tx:", initializeStorage_tx);
+
+  const initializeProfile_tx = await program.initializeProfile(
+    "osp_nb",
+    "https://www.google.com/1",
+    "https://www.google.com/2"
+  );
+  console.log("initializeProfile tx:", initializeProfile_tx);
 }
 
 main();

@@ -3,7 +3,7 @@ import nacl from "tweetnacl";
 import { Connection, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { MPL_TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 
-const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
+export const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
   MPL_TOKEN_METADATA_PROGRAM_ID.toString()
 );
 export const signMessage = (message: string, secretKey: Uint8Array) => {
@@ -33,7 +33,7 @@ export const requestAirdrop = async (
   await connection.confirmTransaction(tx);
 };
 
-export const getMetadata = async (mint: PublicKey): Promise<PublicKey> => {
+export const getMetadata = (mint: PublicKey): PublicKey => {
   return PublicKey.findProgramAddressSync(
     [
       Buffer.from("metadata"),
@@ -44,7 +44,7 @@ export const getMetadata = async (mint: PublicKey): Promise<PublicKey> => {
   )[0];
 };
 
-export const getMasterEdition = async (mint: PublicKey): Promise<PublicKey> => {
+export const getMasterEdition = (mint: PublicKey): PublicKey => {
   return PublicKey.findProgramAddressSync(
     [
       Buffer.from("metadata"),

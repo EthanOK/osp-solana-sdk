@@ -5,9 +5,28 @@ import {
   Wallet,
   web3,
 } from "@coral-xyz/anchor";
-import { AccountInfo, Connection, PublicKey } from "@solana/web3.js";
+import {
+  AccountInfo,
+  ComputeBudgetProgram,
+  Connection,
+  PublicKey,
+} from "@solana/web3.js";
 import { OpenSocial } from "../idl/open_social";
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
+  getAssociatedTokenAddressSync,
+} from "@solana/spl-token";
+import {
+  getMasterEdition,
+  getMetadata,
+  TOKEN_METADATA_PROGRAM_ID,
+} from "../util/utils";
 
+const additionalComputeBudgetInstruction =
+  ComputeBudgetProgram.setComputeUnitLimit({
+    units: 300000,
+  });
 export class OSPProgram {
   program: Program<OpenSocial>;
 
@@ -129,6 +148,13 @@ export class OSPProgram {
     )[0];
   }
 
+  getCollectionPDA(seed: string): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from("collection"), Buffer.from(seed)],
+      this.program.programId
+    )[0];
+  }
+
   async initializeStorage(): Promise<string | null> {
     try {
       const tx = await this.program.methods
@@ -142,7 +168,49 @@ export class OSPProgram {
       return tx;
     } catch (e) {
       const anchorError = e as AnchorError;
-      console.log("error:\n", anchorError.logs);
+      console.log("initializeStorage error:\n", anchorError.logs);
+      return null;
+    }
+  }
+
+  async initializeProfile(
+    handle: string,
+    uriProfile: string,
+    uriFollowMint: string
+  ): Promise<string | null> {
+    try {
+      const profilePDA = this.getProfilePDA(handle);
+      const profileNFT = this.getProfileNFT(profilePDA);
+      const profileFollowMint = this.getProfileFollowMint(profilePDA);
+      const destination = getAssociatedTokenAddressSync(
+        profileNFT,
+        this.program.provider.publicKey
+      );
+      const tx = await this.program.methods
+        .initializeProfile(handle, uriProfile, uriFollowMint)
+        .accountsPartial({
+          user: this.program.provider.publicKey,
+          storage: this.getStoragePDA(),
+          profile: profilePDA,
+          mint: profileNFT,
+          collection: this.getCollectionPDA("profile"),
+          destination: destination,
+          metadata: getMetadata(profileNFT),
+          edition: getMasterEdition(profileNFT),
+          followMint: profileFollowMint,
+          followMetadata: getMetadata(profileFollowMint),
+          systemProgram: web3.SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+        })
+        .preInstructions([additionalComputeBudgetInstruction])
+        .rpc();
+      return tx;
+    } catch (error) {
+      // console.log(error);
+      const anchorError = error as AnchorError;
+      console.log("initializeProfile error:\n", anchorError.logs);
       return null;
     }
   }
