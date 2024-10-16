@@ -1,19 +1,25 @@
+import { Wallet } from "@coral-xyz/anchor";
 import {
   getDevConnection,
   getLocalConnection,
+  Keypair,
   OSP_IDL,
   OSPProgram,
   PublicKey,
+  requestAirdrop,
 } from "../src";
 
 async function main() {
   const connection = getLocalConnection();
+  const payer = Keypair.generate();
 
-  // console.log("Connection:", connection);
+  await requestAirdrop(connection, payer.publicKey);
 
-  let wallet;
+  let wallet = new Wallet(payer);
 
   const program = new OSPProgram(OSP_IDL, connection, wallet);
+
+  console.log(program.program.provider.publicKey);
 
   const storageAccount = await program.getStorageAccountInfo(
     new PublicKey("DUNjGpYgP97mSoJ7VCMDGSz61vYsrSJ7JrhszSB8gdmR")
@@ -44,6 +50,10 @@ async function main() {
     new PublicKey("FvNXMcYZK9FR1DJdBSD6AaYFUAbNERvDs1ycr3TBdxiV")
   );
   console.log("megaphoneAccount:\n", megaphoneAccount);
+
+  const tx = await program.initializeStorage();
+  console.log("initializeStorage tx:", tx);
+  
 }
 
 main();

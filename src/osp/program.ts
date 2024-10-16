@@ -1,4 +1,10 @@
-import { AnchorProvider, Program, Wallet } from "@coral-xyz/anchor";
+import {
+  AnchorError,
+  AnchorProvider,
+  Program,
+  Wallet,
+  web3,
+} from "@coral-xyz/anchor";
 import { AccountInfo, Connection, PublicKey } from "@solana/web3.js";
 import { OpenSocial } from "../idl/open_social";
 
@@ -21,7 +27,7 @@ export class OSPProgram {
     return await this.program.provider.connection.getAccountInfo(account);
   }
 
-  async getStorageAccountInfo(account: PublicKey): Promise<any> {
+  async getStorageAccountInfo(account: PublicKey): Promise<Object | null> {
     try {
       return await this.program.account.ospStorage.fetch(account);
     } catch (error) {
@@ -30,7 +36,7 @@ export class OSPProgram {
     }
   }
 
-  async getProfileAccountInfo(account: PublicKey): Promise<any> {
+  async getProfileAccountInfo(account: PublicKey): Promise<Object | null> {
     try {
       return await this.program.account.profile.fetch(account);
     } catch (error) {
@@ -39,7 +45,7 @@ export class OSPProgram {
     }
   }
 
-  async getCommunityAccountInfo(account: PublicKey): Promise<any> {
+  async getCommunityAccountInfo(account: PublicKey): Promise<Object | null> {
     try {
       return await this.program.account.community.fetch(account);
     } catch (error) {
@@ -48,7 +54,7 @@ export class OSPProgram {
     }
   }
 
-  async getActivityAccountInfo(account: PublicKey): Promise<any> {
+  async getActivityAccountInfo(account: PublicKey): Promise<Object | null> {
     try {
       return await this.program.account.activity.fetch(account);
     } catch (error) {
@@ -57,7 +63,7 @@ export class OSPProgram {
     }
   }
 
-  async getCommentAccountInfo(account: PublicKey): Promise<any> {
+  async getCommentAccountInfo(account: PublicKey): Promise<Object | null> {
     try {
       return await this.program.account.comment.fetch(account);
     } catch (error) {
@@ -66,11 +72,77 @@ export class OSPProgram {
     }
   }
 
-  async getMegaphoneAccountInfo(account: PublicKey): Promise<any> {
+  async getMegaphoneAccountInfo(account: PublicKey): Promise<Object | null> {
     try {
       return await this.program.account.megaphone.fetch(account);
     } catch (error) {
       console.log(`${account} not is megaphone account`);
+      return null;
+    }
+  }
+
+  getStoragePDA(): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from("storage")],
+      this.program.programId
+    )[0];
+  }
+
+  getProfilePDA(handle: string): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from("profile"), Buffer.from(handle)],
+      this.program.programId
+    )[0];
+  }
+
+  getProfileNFT(profilePDA: PublicKey): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from("profile_nft"), profilePDA.toBytes()],
+      this.program.programId
+    )[0];
+  }
+
+  getProfileFollowMint(profilePDA: PublicKey): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from("follow_mint"), profilePDA.toBytes()],
+      this.program.programId
+    )[0];
+  }
+
+  getCommunityPDA(handle: string): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from("tribe"), Buffer.from(handle)],
+      this.program.programId
+    )[0];
+  }
+
+  getCommunityNFT(communityPDA: PublicKey): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from("tribe_nft"), communityPDA.toBytes()],
+      this.program.programId
+    )[0];
+  }
+  getCommunityJoinMint(communityPDA: PublicKey): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from("follow_mint"), communityPDA.toBytes()],
+      this.program.programId
+    )[0];
+  }
+
+  async initializeStorage(): Promise<string | null> {
+    try {
+      const tx = await this.program.methods
+        .initializeStorage()
+        .accountsPartial({
+          authority: this.program.provider.publicKey,
+          ospStorage: this.getStoragePDA(),
+          systemProgram: web3.SystemProgram.programId,
+        })
+        .rpc();
+      return tx;
+    } catch (e) {
+      const anchorError = e as AnchorError;
+      console.log("error:\n", anchorError.logs);
       return null;
     }
   }
