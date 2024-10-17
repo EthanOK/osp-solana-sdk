@@ -1,13 +1,13 @@
 import { Wallet } from "@coral-xyz/anchor";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import {
   getDevConnection,
   getLocalConnection,
-  Keypair,
   OSP_IDL,
   OSPProgram,
-  PublicKey,
   requestAirdrop,
-} from "../src";
+  } from "../src";
+// } from "osp-solana-sdk";
 
 async function main() {
   const connection = getLocalConnection();
@@ -54,12 +54,29 @@ async function main() {
   // const initializeStorage_tx = await program.initializeStorage();
   // console.log("initializeStorage tx:", initializeStorage_tx);
 
+  const timestamp = Date.now() % 10000;
+  
   const initializeProfile_tx = await program.initializeProfile(
-    "osp_nb",
+    `osp_${timestamp}`,
     "https://www.google.com/1",
     "https://www.google.com/2"
   );
   console.log("initializeProfile tx:", initializeProfile_tx);
+
+  const accountInfo = await program.getProfileAccountInfo(
+    program.getProfilePDA(`osp_${timestamp}`)
+  );
+  console.log("accountInfo:\n", accountInfo);
+
+  // await program.followProfile(
+  //   program.getProfilePDA(`osp_${timestamp}`),
+  //   program.getProfilePDA(`profile`)
+  // );
+  const followProfile_tx = await program.followProfile(
+    program.getProfilePDA(`osp_${timestamp}`),
+    program.getProfilePDA(`other_profile`)
+  );
+  console.log("followProfile tx:", followProfile_tx);
 }
 
 main();

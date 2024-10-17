@@ -17,11 +17,8 @@ import {
   TOKEN_PROGRAM_ID,
   getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
-import {
-  getMasterEdition,
-  getMetadata,
-  TOKEN_METADATA_PROGRAM_ID,
-} from "../util/utils";
+import { getMasterEdition, getMetadata } from "../util/utils";
+import { TOKEN_METADATA_PROGRAM_ID } from "./constant";
 
 const additionalComputeBudgetInstruction =
   ComputeBudgetProgram.setComputeUnitLimit({
@@ -165,6 +162,7 @@ export class OSPProgram {
           systemProgram: web3.SystemProgram.programId,
         })
         .rpc();
+      await this.program.provider.connection.confirmTransaction(tx);
       return tx;
     } catch (e) {
       const anchorError = e as AnchorError;
@@ -206,11 +204,83 @@ export class OSPProgram {
         })
         .preInstructions([additionalComputeBudgetInstruction])
         .rpc();
+
+      await this.program.provider.connection.confirmTransaction(tx);
       return tx;
     } catch (error) {
       // console.log(error);
       const anchorError = error as AnchorError;
       console.log("initializeProfile error:\n", anchorError.logs);
+      return null;
+    }
+  }
+
+  async followProfile(
+    followerProfilePDA: PublicKey,
+    followedProfile: PublicKey
+  ): Promise<string | null> {
+    try {
+      const follower = this.program.provider.publicKey;
+
+      const followedMint = this.getProfileFollowMint(followedProfile);
+
+      const followedProfileAccountInfo = await this.getProfileAccountInfo(
+        followedProfile
+      );
+      const remainingAccounts = [];
+
+      try {
+        const handle: string = JSON.parse(
+          JSON.stringify(followedProfileAccountInfo)
+        ).followCondition.isFollowing.handle;
+        const isFollowingProfile = this.getProfilePDA(handle);
+        const isFollowingProfileATA = getAssociatedTokenAddressSync(
+          this.getProfileFollowMint(isFollowingProfile),
+          follower
+        );
+        remainingAccounts.push({
+          pubkey: isFollowingProfile,
+          isSigner: false,
+          isWritable: true,
+        });
+        remainingAccounts.push({
+          pubkey: isFollowingProfileATA,
+          isSigner: false,
+          isWritable: true,
+        });
+
+        const isFollowingProfileATAAccountInfo = await this.getAccountInfo(
+          isFollowingProfileATA
+        );
+        if (isFollowingProfileATAAccountInfo === null) {
+          console.log(`${handle}: isFollowingProfile ATA Not Exist`);
+          return null;
+        }
+      } catch (error) {}
+
+      const destination = getAssociatedTokenAddressSync(followedMint, follower);
+
+      const tx = await this.program.methods
+        .followProfile()
+        .accountsPartial({
+          follower: follower,
+          followerProfile: followerProfilePDA,
+          followedProfile: followedProfile,
+          followMint: followedMint,
+          destination: destination,
+          systemProgram: web3.SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+        })
+        .preInstructions([additionalComputeBudgetInstruction])
+        .remainingAccounts(remainingAccounts)
+        .rpc();
+      await this.program.provider.connection.confirmTransaction(tx);
+      return tx;
+    } catch (error) {
+      const anchorError = error as AnchorError;
+      console.log("followProfile error:\n", anchorError.logs);
       return null;
     }
   }

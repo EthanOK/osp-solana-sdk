@@ -1,11 +1,8 @@
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import nacl from "tweetnacl";
 import { Connection, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
-import { MPL_TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
+import { TOKEN_METADATA_PROGRAM_ID } from "../osp/constant";
 
-export const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
-  MPL_TOKEN_METADATA_PROGRAM_ID.toString()
-);
 export const signMessage = (message: string, secretKey: Uint8Array) => {
   const messageBytes = Buffer.from(message);
   const signature = nacl.sign.detached(messageBytes, secretKey);

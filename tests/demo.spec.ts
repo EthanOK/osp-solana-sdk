@@ -1,5 +1,7 @@
 import { assert } from "chai";
-import { Keypair, signMessage, verifySignature } from "../src";
+import { Keypair } from "@solana/web3.js";
+// import {signMessage, verifySignature } from "../src";
+import {signMessage, verifySignature } from "osp-solana-sdk";
 
 describe("Test solana signMessage", () => {
   const signer = Keypair.generate();
@@ -9,7 +11,7 @@ describe("Test solana signMessage", () => {
       // console.log(signature);
       const r = verifySignature(`test${i}`, signature, signer.publicKey);
       // console.log(r);
-      assert.equal(r, true)
+      assert.equal(r, true);
     }
   });
 });
