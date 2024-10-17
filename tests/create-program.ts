@@ -1,12 +1,13 @@
 import { Wallet } from "@coral-xyz/anchor";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import {
+  FollowCondition,
   getDevConnection,
   getLocalConnection,
   OSP_IDL,
   OSPProgram,
   requestAirdrop,
-  } from "../src";
+} from "../src";
 // } from "osp-solana-sdk";
 
 async function main() {
@@ -55,7 +56,9 @@ async function main() {
   // console.log("initializeStorage tx:", initializeStorage_tx);
 
   const timestamp = Date.now() % 10000;
-  
+
+  const myProfilePDA = program.getProfilePDA(`osp_${timestamp}`);
+
   const initializeProfile_tx = await program.initializeProfile(
     `osp_${timestamp}`,
     "https://www.google.com/1",
@@ -63,20 +66,38 @@ async function main() {
   );
   console.log("initializeProfile tx:", initializeProfile_tx);
 
-  const accountInfo = await program.getProfileAccountInfo(
-    program.getProfilePDA(`osp_${timestamp}`)
-  );
-  console.log("accountInfo:\n", accountInfo);
+  let profileAccountInfo = await program.getProfileAccountInfo(myProfilePDA);
+  console.log("profile AccountInfo:\n", profileAccountInfo);
 
-  // await program.followProfile(
-  //   program.getProfilePDA(`osp_${timestamp}`),
-  //   program.getProfilePDA(`profile`)
-  // );
   const followProfile_tx = await program.followProfile(
-    program.getProfilePDA(`osp_${timestamp}`),
-    program.getProfilePDA(`other_profile`)
+    myProfilePDA,
+    program.getProfilePDA(`profile`)
   );
   console.log("followProfile tx:", followProfile_tx);
+
+  const result = await program.setFollowConditions(
+    myProfilePDA,
+    FollowCondition.FollowHandle,
+    "osp123"
+  );
+  console.log(result);
+
+  profileAccountInfo = await program.getProfileAccountInfo(myProfilePDA);
+  console.log("profile AccountInfo:\n", profileAccountInfo);
+
+  await program.setFollowConditions(myProfilePDA, FollowCondition.None);
+
+  profileAccountInfo = await program.getProfileAccountInfo(myProfilePDA);
+  console.log("profile AccountInfo:\n", profileAccountInfo);
+
+  await program.setFollowConditions(
+    myProfilePDA,
+    FollowCondition.FollowersNumber,
+    2
+  );
+
+  profileAccountInfo = await program.getProfileAccountInfo(myProfilePDA);
+  console.log("profile AccountInfo:\n", profileAccountInfo);
 }
 
 main();

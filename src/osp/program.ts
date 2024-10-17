@@ -24,6 +24,18 @@ const additionalComputeBudgetInstruction =
   ComputeBudgetProgram.setComputeUnitLimit({
     units: 300000,
   });
+
+export enum FollowCondition {
+  None,
+  FollowHandle,
+  FollowersNumber,
+}
+
+export type TxResult = {
+  txHash: string | null;
+  error: any | null;
+};
+
 export class OSPProgram {
   program: Program<OpenSocial>;
 
@@ -152,7 +164,11 @@ export class OSPProgram {
     )[0];
   }
 
-  async initializeStorage(): Promise<string | null> {
+  async initializeStorage(): Promise<TxResult> {
+    const result: TxResult = {
+      txHash: null,
+      error: null,
+    };
     try {
       const tx = await this.program.methods
         .initializeStorage()
@@ -163,19 +179,31 @@ export class OSPProgram {
         })
         .rpc();
       await this.program.provider.connection.confirmTransaction(tx);
-      return tx;
-    } catch (e) {
-      const anchorError = e as AnchorError;
-      console.log("initializeStorage error:\n", anchorError.logs);
-      return null;
+      result.txHash = tx;
+      return result;
+    } catch (error) {
+      const anchorError = error as AnchorError;
+      result.error = anchorError.logs;
+      return result;
     }
   }
 
+  /**
+   * Initialize a profile
+   * @param handle
+   * @param uriProfile
+   * @param uriFollowMint
+   * @returns
+   */
   async initializeProfile(
     handle: string,
     uriProfile: string,
     uriFollowMint: string
-  ): Promise<string | null> {
+  ): Promise<TxResult> {
+    const result: TxResult = {
+      txHash: null,
+      error: null,
+    };
     try {
       const profilePDA = this.getProfilePDA(handle);
       const profileNFT = this.getProfileNFT(profilePDA);
@@ -206,19 +234,29 @@ export class OSPProgram {
         .rpc();
 
       await this.program.provider.connection.confirmTransaction(tx);
-      return tx;
+      result.txHash = tx;
+      return result;
     } catch (error) {
-      // console.log(error);
       const anchorError = error as AnchorError;
-      console.log("initializeProfile error:\n", anchorError.logs);
-      return null;
+      result.error = anchorError.logs;
+      return result;
     }
   }
 
+  /**
+   * Follow a profile
+   * @param followerProfile
+   * @param followedProfile
+   * @returns
+   */
   async followProfile(
-    followerProfilePDA: PublicKey,
+    followerProfile: PublicKey,
     followedProfile: PublicKey
-  ): Promise<string | null> {
+  ): Promise<TxResult> {
+    const result: TxResult = {
+      txHash: null,
+      error: null,
+    };
     try {
       const follower = this.program.provider.publicKey;
 
@@ -253,8 +291,8 @@ export class OSPProgram {
           isFollowingProfileATA
         );
         if (isFollowingProfileATAAccountInfo === null) {
-          console.log(`${handle}: isFollowingProfile ATA Not Exist`);
-          return null;
+          result.error = `${handle}: isFollowingProfile ATA Not Exist`;
+          return result;
         }
       } catch (error) {}
 
@@ -264,7 +302,7 @@ export class OSPProgram {
         .followProfile()
         .accountsPartial({
           follower: follower,
-          followerProfile: followerProfilePDA,
+          followerProfile: followerProfile,
           followedProfile: followedProfile,
           followMint: followedMint,
           destination: destination,
@@ -277,11 +315,68 @@ export class OSPProgram {
         .remainingAccounts(remainingAccounts)
         .rpc();
       await this.program.provider.connection.confirmTransaction(tx);
-      return tx;
+      result.txHash = tx;
+      return result;
     } catch (error) {
       const anchorError = error as AnchorError;
-      console.log("followProfile error:\n", anchorError.logs);
-      return null;
+      result.error = anchorError.logs;
+      return result;
+    }
+  }
+
+  /**
+   *
+   * @param profilePDA
+   * @param followCondition
+   * @param param handle or minimumFollowers
+   * @returns
+   */
+  async setFollowConditions(
+    profilePDA: PublicKey,
+    followCondition: FollowCondition,
+    param?: any
+  ): Promise<TxResult> {
+    const result: TxResult = {
+      txHash: null,
+      error: null,
+    };
+    const user = this.program.provider.publicKey;
+    let followConditions = null;
+    try {
+      switch (followCondition) {
+        case FollowCondition.None:
+          break;
+        case FollowCondition.FollowHandle:
+          if (typeof param !== "string") {
+            result.error = "Invalid param for FollowHandle";
+            return result;
+          }
+          followConditions = { isFollowing: { handle: param } };
+          break;
+        case FollowCondition.FollowersNumber:
+          if (typeof param !== "number") {
+            result.error = "Invalid param for MinimumFollowers";
+            return result;
+          }
+          followConditions = { minimumFollowers: { 0: param } };
+        default:
+          break;
+      }
+
+      const tx = await this.program.methods
+        .setFollowConditions(followConditions)
+        .accountsPartial({
+          user: user,
+          profile: profilePDA,
+        })
+        .rpc();
+      await this.program.provider.connection.confirmTransaction(tx);
+      result.txHash = tx;
+      return result;
+    } catch (error) {
+      const anchorError = error as AnchorError;
+      result.error = anchorError.logs;
+      return result;
     }
   }
 }
