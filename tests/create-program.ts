@@ -12,15 +12,14 @@ import {
 
 async function main() {
   const connection = getLocalConnection();
-  const payer = Keypair.generate();
+  const user1 = Keypair.generate();
+  const user2 = Keypair.generate();
 
-  await requestAirdrop(connection, payer.publicKey);
+  await requestAirdrop(connection, user1.publicKey);
+  await requestAirdrop(connection, user2.publicKey);
 
-  let wallet = new Wallet(payer);
-
-  const program = new OSPProgram(OSP_IDL, connection, wallet);
-
-  console.log(program.program.provider.publicKey);
+  const program = new OSPProgram(OSP_IDL, connection, new Wallet(user1));
+  const program2 = new OSPProgram(OSP_IDL, connection, new Wallet(user2));
 
   const storageAccount = await program.getStorageAccountInfo(
     new PublicKey("DUNjGpYgP97mSoJ7VCMDGSz61vYsrSJ7JrhszSB8gdmR")
@@ -57,7 +56,9 @@ async function main() {
 
   const timestamp = Date.now() % 10000;
 
-  const myProfilePDA = program.getProfilePDA(`osp_${timestamp}`);
+  const user1ProfilePDA = program.getProfilePDA(`osp_${timestamp}`);
+
+  const user2ProfilePDA = program2.getProfilePDA(`osp2_${timestamp}`);
 
   const initializeProfile_tx = await program.initializeProfile(
     `osp_${timestamp}`,
@@ -66,38 +67,93 @@ async function main() {
   );
   console.log("initializeProfile tx:", initializeProfile_tx);
 
-  let profileAccountInfo = await program.getProfileAccountInfo(myProfilePDA);
+  let profileAccountInfo = await program.getProfileAccountInfo(user1ProfilePDA);
   console.log("profile AccountInfo:\n", profileAccountInfo);
 
-  const followProfile_tx = await program.followProfile(
-    myProfilePDA,
+  let followProfile_tx = await program.followProfile(
+    user1ProfilePDA,
     program.getProfilePDA(`profile`)
   );
   console.log("followProfile tx:", followProfile_tx);
 
-  const result = await program.setFollowConditions(
-    myProfilePDA,
+  let setFollowConditions_tx = await program.setFollowConditions(
+    user1ProfilePDA,
     FollowCondition.FollowHandle,
     "osp123"
   );
-  console.log(result);
+  console.log("setFollowConditions tx:", setFollowConditions_tx);
 
-  profileAccountInfo = await program.getProfileAccountInfo(myProfilePDA);
+  profileAccountInfo = await program.getProfileAccountInfo(user1ProfilePDA);
   console.log("profile AccountInfo:\n", profileAccountInfo);
 
-  await program.setFollowConditions(myProfilePDA, FollowCondition.None);
+  setFollowConditions_tx = await program.setFollowConditions(
+    user1ProfilePDA,
+    FollowCondition.None
+  );
+  console.log("setFollowConditions tx:", setFollowConditions_tx);
 
-  profileAccountInfo = await program.getProfileAccountInfo(myProfilePDA);
+  profileAccountInfo = await program.getProfileAccountInfo(user1ProfilePDA);
   console.log("profile AccountInfo:\n", profileAccountInfo);
 
-  await program.setFollowConditions(
-    myProfilePDA,
+  setFollowConditions_tx = await program.setFollowConditions(
+    user1ProfilePDA,
     FollowCondition.FollowersNumber,
-    2
+    1
+  );
+  console.log("setFollowConditions tx:", setFollowConditions_tx);
+
+  profileAccountInfo = await program.getProfileAccountInfo(user1ProfilePDA);
+  console.log("profile AccountInfo:\n", profileAccountInfo);
+  
+  const communityPDA = program.getCommunityPDA(`community1_${timestamp}`);
+
+  let createCommunity_tx = await program.createCommunity(
+    user1ProfilePDA,
+    `community1_${timestamp}`,
+    "https://www.google.com/1",
+    "https://www.google.com/2"
+  );
+  console.log("createCommunity tx:", createCommunity_tx);
+
+  console.log("`````````````````````````");
+
+  await program2.initializeProfile(
+    `osp2_${timestamp}`,
+    "https://www.google.com/1",
+    "https://www.google.com/2"
   );
 
-  profileAccountInfo = await program.getProfileAccountInfo(myProfilePDA);
-  console.log("profile AccountInfo:\n", profileAccountInfo);
+  followProfile_tx = await program.followProfile(
+    user1ProfilePDA,
+    user2ProfilePDA
+  );
+  console.log("user1 follow user2 tx:", followProfile_tx);
+
+  followProfile_tx = await program2.followProfile(
+    user2ProfilePDA,
+    user1ProfilePDA
+  );
+  console.log("user2 follow user1 tx:", followProfile_tx);
+
+   createCommunity_tx = await program2.createCommunity(
+    user2ProfilePDA,
+    `community2_${timestamp}`,
+    "https://www.google.com/1",
+    "https://www.google.com/2"
+  );
+  console.log("createCommunity tx:", createCommunity_tx);
+
+  const community2PDA = program2.getCommunityPDA(`community2_${timestamp}`);
+  let communityAccountInfo = await program2.getCommunityAccountInfo(
+    community2PDA
+  );
+  console.log("community AccountInfo:\n", communityAccountInfo);
+
+  const joinCommunity_tx = await program2.joinCommunity(
+    user2ProfilePDA,
+    communityPDA
+  );
+  console.log("joinCommunity tx:", joinCommunity_tx);
 }
 
 main();

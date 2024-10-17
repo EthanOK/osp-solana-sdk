@@ -183,7 +183,7 @@ export class OSPProgram {
       return result;
     } catch (error) {
       const anchorError = error as AnchorError;
-      result.error = anchorError.logs;
+      result.error = anchorError.error.errorMessage;
       return result;
     }
   }
@@ -238,7 +238,7 @@ export class OSPProgram {
       return result;
     } catch (error) {
       const anchorError = error as AnchorError;
-      result.error = anchorError.logs;
+      result.error = anchorError.error.errorMessage;
       return result;
     }
   }
@@ -319,7 +319,7 @@ export class OSPProgram {
       return result;
     } catch (error) {
       const anchorError = error as AnchorError;
-      result.error = anchorError.logs;
+      result.error = anchorError.error.errorMessage;
       return result;
     }
   }
@@ -334,7 +334,7 @@ export class OSPProgram {
   async setFollowConditions(
     profilePDA: PublicKey,
     followCondition: FollowCondition,
-    param?: any
+    param?: string | number
   ): Promise<TxResult> {
     const result: TxResult = {
       txHash: null,
@@ -375,7 +375,111 @@ export class OSPProgram {
       return result;
     } catch (error) {
       const anchorError = error as AnchorError;
-      result.error = anchorError.logs;
+      result.error = anchorError.error.errorMessage;
+      return result;
+    }
+  }
+
+  /**
+   * Create a community
+   * @param handle
+   * @param uriCommunity
+   * @param uriJoinMint
+   * @param tags
+   * @returns
+   */
+  async createCommunity(
+    profilePDA: PublicKey,
+    handle: string,
+    uriCommunity: string,
+    uriJoinMint: string,
+    tags: string[] = []
+  ): Promise<TxResult> {
+    const result: TxResult = {
+      txHash: null,
+      error: null,
+    };
+    try {
+      const storage = this.getStoragePDA();
+      const user = this.program.provider.publicKey;
+      const communityPDA = this.getCommunityPDA(handle);
+      const communityNFT = this.getCommunityNFT(communityPDA);
+      const communityJoinMint = this.getCommunityJoinMint(communityPDA);
+      const destination = getAssociatedTokenAddressSync(communityNFT, user);
+      const metadata = getMetadata(communityNFT);
+      const edition = getMasterEdition(communityNFT);
+      const joinMetadata = getMetadata(communityJoinMint);
+      const userJoinAta = getAssociatedTokenAddressSync(
+        communityJoinMint,
+        user
+      );
+
+      const tx = await this.program.methods
+        .createCommunity(handle, uriCommunity, uriJoinMint, tags)
+        .accountsPartial({
+          user: user,
+          storage,
+          profile: profilePDA,
+          tribe: communityPDA,
+          mint: communityNFT,
+          collection: this.getCollectionPDA("community"),
+          destination: destination,
+          metadata: metadata,
+          edition: edition,
+          joinMint: communityJoinMint,
+          joinMetadata: joinMetadata,
+          userJoinAta: userJoinAta,
+          systemProgram: web3.SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+        })
+        .preInstructions([additionalComputeBudgetInstruction])
+        .rpc();
+      await this.program.provider.connection.confirmTransaction(tx);
+      result.txHash = tx;
+      return result;
+    } catch (error) {
+      const anchorError = error as AnchorError;
+      result.error = anchorError.error.errorMessage;
+      return result;
+    }
+  }
+
+  async joinCommunity(
+    profilePDA: PublicKey,
+    communityPDA: PublicKey
+  ): Promise<TxResult> {
+    const result: TxResult = {
+      txHash: null,
+      error: null,
+    };
+    try {
+      const user = this.program.provider.publicKey;
+      const communityFollowMint = this.getCommunityJoinMint(communityPDA);
+      const userJoinAta = getAssociatedTokenAddressSync(
+        communityFollowMint,
+        user
+      );
+      const tx = await this.program.methods
+        .joinTribe()
+        .accountsPartial({
+          user: user,
+          profile: profilePDA,
+          tribe: communityPDA,
+          joinMint: communityFollowMint,
+          profileAta: userJoinAta,
+          systemProgram: web3.SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        })
+        .rpc();
+      await this.program.provider.connection.confirmTransaction(tx);
+      result.txHash = tx;
+      return result;
+    } catch (error) {
+      const anchorError = error as AnchorError;
+      result.error = anchorError.error.errorMessage;
       return result;
     }
   }
