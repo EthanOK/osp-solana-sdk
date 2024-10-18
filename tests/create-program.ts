@@ -104,7 +104,7 @@ async function main() {
 
   profileAccountInfo = await program.getProfileAccountInfo(user1ProfilePDA);
   console.log("profile AccountInfo:\n", profileAccountInfo);
-  
+
   const communityPDA = program.getCommunityPDA(`community1_${timestamp}`);
 
   let createCommunity_tx = await program.createCommunity(
@@ -135,7 +135,7 @@ async function main() {
   );
   console.log("user2 follow user1 tx:", followProfile_tx);
 
-   createCommunity_tx = await program2.createCommunity(
+  createCommunity_tx = await program2.createCommunity(
     user2ProfilePDA,
     `community2_${timestamp}`,
     "https://www.google.com/1",
@@ -149,11 +149,12 @@ async function main() {
   );
   console.log("community AccountInfo:\n", communityAccountInfo);
 
-  const joinCommunity_tx = await program2.joinCommunity(
+  const createActivity_tx = await program2.createActivity(
     user2ProfilePDA,
-    communityPDA
+    community2PDA,
+    "https://www.google.com/1"
   );
-  console.log("joinCommunity tx:", joinCommunity_tx);
+  console.log("createActivity tx:", createActivity_tx);
 }
 
 main();

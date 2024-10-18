@@ -5,6 +5,7 @@ import {
   Wallet,
   web3,
 } from "@coral-xyz/anchor";
+import BN from "bn.js";
 import {
   AccountInfo,
   ComputeBudgetProgram,
@@ -64,7 +65,17 @@ export class OSPProgram {
     }
   }
 
-  async getProfileAccountInfo(account: PublicKey): Promise<Object | null> {
+  async getProfileAccountInfo(account: PublicKey): Promise<{
+    id: BN;
+    handle: string;
+    address: web3.PublicKey;
+    followers: number;
+    following: number;
+    contentCount: number;
+    followBump: number;
+    bump: number;
+    followCondition: any;
+  } | null> {
     try {
       return await this.program.account.profile.fetch(account);
     } catch (error) {
@@ -117,51 +128,99 @@ export class OSPProgram {
   }
 
   getProfilePDA(handle: string): PublicKey {
-    return PublicKey.findProgramAddressSync(
-      [Buffer.from("profile"), Buffer.from(handle)],
-      this.program.programId
-    )[0];
+    try {
+      return PublicKey.findProgramAddressSync(
+        [Buffer.from("profile"), Buffer.from(handle)],
+        this.program.programId
+      )[0];
+    } catch (error) {
+      return null;
+    }
   }
 
   getProfileNFT(profilePDA: PublicKey): PublicKey {
-    return PublicKey.findProgramAddressSync(
-      [Buffer.from("profile_nft"), profilePDA.toBytes()],
-      this.program.programId
-    )[0];
+    try {
+      return PublicKey.findProgramAddressSync(
+        [Buffer.from("profile_nft"), profilePDA.toBytes()],
+        this.program.programId
+      )[0];
+    } catch (error) {
+      return null;
+    }
   }
 
   getProfileFollowMint(profilePDA: PublicKey): PublicKey {
-    return PublicKey.findProgramAddressSync(
-      [Buffer.from("follow_mint"), profilePDA.toBytes()],
-      this.program.programId
-    )[0];
+    try {
+      return PublicKey.findProgramAddressSync(
+        [Buffer.from("follow_mint"), profilePDA.toBytes()],
+        this.program.programId
+      )[0];
+    } catch (error) {
+      return null;
+    }
   }
 
   getCommunityPDA(handle: string): PublicKey {
-    return PublicKey.findProgramAddressSync(
-      [Buffer.from("tribe"), Buffer.from(handle)],
-      this.program.programId
-    )[0];
+    try {
+      return PublicKey.findProgramAddressSync(
+        [Buffer.from("tribe"), Buffer.from(handle)],
+        this.program.programId
+      )[0];
+    } catch (error) {
+      return null;
+    }
   }
 
   getCommunityNFT(communityPDA: PublicKey): PublicKey {
-    return PublicKey.findProgramAddressSync(
-      [Buffer.from("tribe_nft"), communityPDA.toBytes()],
-      this.program.programId
-    )[0];
+    try {
+      return PublicKey.findProgramAddressSync(
+        [Buffer.from("tribe_nft"), communityPDA.toBytes()],
+        this.program.programId
+      )[0];
+    } catch (error) {
+      return null;
+    }
   }
   getCommunityJoinMint(communityPDA: PublicKey): PublicKey {
-    return PublicKey.findProgramAddressSync(
-      [Buffer.from("follow_mint"), communityPDA.toBytes()],
-      this.program.programId
-    )[0];
+    try {
+      return PublicKey.findProgramAddressSync(
+        [Buffer.from("follow_mint"), communityPDA.toBytes()],
+        this.program.programId
+      )[0];
+    } catch (error) {
+      return null;
+    }
   }
 
   getCollectionPDA(seed: string): PublicKey {
-    return PublicKey.findProgramAddressSync(
-      [Buffer.from("collection"), Buffer.from(seed)],
-      this.program.programId
-    )[0];
+    try {
+      return PublicKey.findProgramAddressSync(
+        [Buffer.from("collection"), Buffer.from(seed)],
+        this.program.programId
+      )[0];
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async getActivityPDA(profilePDA: PublicKey) {
+    try {
+      const profile = await this.getProfileAccountInfo(profilePDA);
+      if (profile == null) {
+        return null;
+      } else {
+        return PublicKey.findProgramAddressSync(
+          [
+            Buffer.from("activity"),
+            Buffer.from(profile.handle),
+            new BN(profile.contentCount).toArrayLike(Buffer, "le", 4),
+          ],
+          this.program.programId
+        )[0];
+      }
+    } catch (error) {
+      return null;
+    }
   }
 
   async initializeStorage(): Promise<TxResult> {
@@ -183,7 +242,7 @@ export class OSPProgram {
       return result;
     } catch (error) {
       const anchorError = error as AnchorError;
-      result.error = anchorError.error.errorMessage;
+      result.error = anchorError.errorLogs;
       return result;
     }
   }
@@ -238,7 +297,7 @@ export class OSPProgram {
       return result;
     } catch (error) {
       const anchorError = error as AnchorError;
-      result.error = anchorError.error.errorMessage;
+      result.error = anchorError.errorLogs;
       return result;
     }
   }
@@ -319,7 +378,7 @@ export class OSPProgram {
       return result;
     } catch (error) {
       const anchorError = error as AnchorError;
-      result.error = anchorError.error.errorMessage;
+      result.error = anchorError.errorLogs;
       return result;
     }
   }
@@ -375,7 +434,7 @@ export class OSPProgram {
       return result;
     } catch (error) {
       const anchorError = error as AnchorError;
-      result.error = anchorError.error.errorMessage;
+      result.error = anchorError.errorLogs;
       return result;
     }
   }
@@ -441,11 +500,17 @@ export class OSPProgram {
       return result;
     } catch (error) {
       const anchorError = error as AnchorError;
-      result.error = anchorError.error.errorMessage;
+      result.error = anchorError.errorLogs;
       return result;
     }
   }
 
+  /**
+   * Join a community
+   * @param profilePDA
+   * @param communityPDA
+   * @returns
+   */
   async joinCommunity(
     profilePDA: PublicKey,
     communityPDA: PublicKey
@@ -479,8 +544,66 @@ export class OSPProgram {
       return result;
     } catch (error) {
       const anchorError = error as AnchorError;
-      result.error = anchorError.error.errorMessage;
+      result.error = anchorError.errorLogs;
+      return result;
+    }
+  }
+
+  /**
+   * Create an activity
+   * @param profilePDA
+   * @param communityPDA
+   * @param uriPost
+   * @returns
+   */
+  async createActivity(
+    profilePDA: PublicKey,
+    communityPDA: PublicKey,
+    uriPost: string
+  ): Promise<TxResult> {
+    const result: TxResult = {
+      txHash: null,
+      error: null,
+    };
+
+    try {
+      const user = this.program.provider.publicKey;
+
+      const communityMint = this.getCommunityJoinMint(communityPDA);
+      console.log(communityPDA);
+      console.log(communityMint);
+
+      const tx = await this.program.methods
+        .createActivity(uriPost)
+        .accountsPartial({
+          user: user,
+          profile: profilePDA,
+          community: communityPDA,
+          communityMint: communityMint,
+          userCommunityAta: getAssociatedTokenAddress(communityMint, user),
+          // activity,
+          systemProgram: web3.SystemProgram.programId,
+        })
+        .rpc();
+      await this.program.provider.connection.confirmTransaction(tx);
+      result.txHash = tx;
+      return result;
+    } catch (error) {
+      const anchorError = error as AnchorError;
+      result.error = anchorError.errorLogs;
       return result;
     }
   }
 }
+
+export const getAssociatedTokenAddress = (
+  mint: PublicKey,
+  owner: PublicKey
+) => {
+  try {
+    const ata = getAssociatedTokenAddressSync(mint, owner);
+    return ata;
+  } catch (error) {
+    return null;
+  }
+};
