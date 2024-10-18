@@ -33,6 +33,7 @@ export type OpenSocial = {
         },
         {
           "name": "profile",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -63,14 +64,16 @@ export type OpenSocial = {
               {
                 "kind": "const",
                 "value": [
-                  116,
-                  114,
-                  105,
-                  98,
-                  101,
-                  95,
-                  110,
                   102,
+                  111,
+                  108,
+                  108,
+                  111,
+                  119,
+                  95,
+                  109,
+                  105,
+                  110,
                   116
                 ]
               },

@@ -1,6 +1,7 @@
 import { Wallet } from "@coral-xyz/anchor";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import {
+  CommentCondition,
   FollowCondition,
   getDevConnection,
   getLocalConnection,
@@ -149,12 +150,69 @@ async function main() {
   );
   console.log("community AccountInfo:\n", communityAccountInfo);
 
+  // user1 join community2
+  const joinCommunity_tx = await program.joinCommunity(
+    user1ProfilePDA,
+    community2PDA
+  );
+  console.log("joinCommunity_tx:", joinCommunity_tx);
+
+  const activityPDA2 = await program2.getActivityPDA(user2ProfilePDA);
+
   const createActivity_tx = await program2.createActivity(
     user2ProfilePDA,
-    community2PDA,
-    "https://www.google.com/1"
+    "https://www.google.com/1",
+    community2PDA
   );
-  console.log("createActivity tx:", createActivity_tx);
+  console.log("createActivity_tx:", createActivity_tx);
+
+  console.log(
+    "activityPDA Info:",
+    await program2.getActivityAccountInfo(activityPDA2)
+  );
+
+  // user2 set comment conditions
+  const setCommentConditions_tx = await program2.setCommentConditions(
+    user2ProfilePDA,
+    activityPDA2,
+    CommentCondition.SameCommunity
+  );
+  console.log("setCommentConditions_tx:", setCommentConditions_tx);
+
+  console.log(
+    "activityPDA Info:",
+    await program2.getActivityAccountInfo(activityPDA2)
+  );
+
+  const createComment_tx = await program2.createComment(
+    user2ProfilePDA,
+    activityPDA2,
+    "https://www.google.com/111",
+    community2PDA
+  );
+  console.log("createComment_tx:", createComment_tx);
+
+  // user2 set comment conditions
+  await program2.setCommentConditions(
+    user2ProfilePDA,
+    activityPDA2,
+    CommentCondition.OnlyFollowers
+  );
+  console.log("setCommentConditions_tx:", setCommentConditions_tx);
+
+  console.log(
+    "activityPDA Info:",
+    await program2.getActivityAccountInfo(activityPDA2)
+  );
+
+  const createComment_tx1 = await program.createComment(
+    user1ProfilePDA,
+    activityPDA2,
+    "https://www.google.com/111",
+    null,
+    user2ProfilePDA
+  );
+  console.log("createComment_tx1:", createComment_tx1);
 }
 
 main();

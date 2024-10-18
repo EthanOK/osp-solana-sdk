@@ -6,7 +6,10 @@ async function main() {
   const connection = getLocalConnection();
 
   const program = new OSPProgram(OSP_IDL, connection, null);
-  const result = await program.getStorageAccountInfo(program.getStoragePDA());
+  let result = await program.getStorageAccountInfo(program.getStoragePDA());
   console.log(result);
+  
+  result= await program.getProfileAccountInfo(new PublicKey("EAcj65RwSVYKwFCVCUpNHWaEGrxewQjqs7eaHXJiKgkg"))
+  console.log(result)
 }
 main();

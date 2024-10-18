@@ -32,6 +32,12 @@ export enum FollowCondition {
   FollowersNumber,
 }
 
+export enum CommentCondition {
+  None,
+  OnlyFollowers,
+  SameCommunity,
+}
+
 export type TxResult = {
   txHash: string | null;
   error: any | null;
@@ -181,7 +187,7 @@ export class OSPProgram {
       return null;
     }
   }
-  getCommunityJoinMint(communityPDA: PublicKey): PublicKey {
+  getCommunityJoinMint(communityPDA: PublicKey): PublicKey | null {
     try {
       return PublicKey.findProgramAddressSync(
         [Buffer.from("follow_mint"), communityPDA.toBytes()],
@@ -203,7 +209,7 @@ export class OSPProgram {
     }
   }
 
-  async getActivityPDA(profilePDA: PublicKey) {
+  async getActivityPDA(profilePDA: PublicKey): Promise<PublicKey> {
     try {
       const profile = await this.getProfileAccountInfo(profilePDA);
       if (profile == null) {
@@ -220,6 +226,27 @@ export class OSPProgram {
       }
     } catch (error) {
       return null;
+    }
+  }
+
+  async getCommentPDA(activityPDA: PublicKey): Promise<PublicKey> {
+    const activity = await this.getActivityAccountInfo(activityPDA);
+
+    if (activity == null) {
+      return null;
+    } else if ("commentCount" in activity) {
+      try {
+        return PublicKey.findProgramAddressSync(
+          [
+            Buffer.from("comment"),
+            activityPDA.toBytes(),
+            (activity.commentCount as BN).toArrayLike(Buffer, "le", 8),
+          ],
+          this.program.programId
+        )[0];
+      } catch (error) {
+        return null;
+      }
     }
   }
 
@@ -552,14 +579,187 @@ export class OSPProgram {
   /**
    * Create an activity
    * @param profilePDA
+   * @param uriActivity
    * @param communityPDA
-   * @param uriPost
    * @returns
    */
   async createActivity(
     profilePDA: PublicKey,
-    communityPDA: PublicKey,
-    uriPost: string
+    uriActivity: string,
+    communityPDA: PublicKey = null
+  ): Promise<TxResult> {
+    const result: TxResult = {
+      txHash: null,
+      error: null,
+    };
+
+    try {
+      const user = this.program.provider.publicKey;
+      const communityMint = this.getCommunityJoinMint(communityPDA);
+
+      const tx = await this.program.methods
+        .createActivity(uriActivity)
+        .accountsPartial({
+          user: user,
+          profile: profilePDA,
+          community: communityPDA,
+          communityMint: communityMint,
+          userCommunityAta: getAssociatedTokenAddress(communityMint, user),
+          // activity: await this.getActivityPDA(profilePDA),
+          systemProgram: web3.SystemProgram.programId,
+        })
+        .rpc();
+      await this.program.provider.connection.confirmTransaction(tx);
+      result.txHash = tx;
+      return result;
+    } catch (error) {
+      // console.log(error);
+      const anchorError = error as AnchorError;
+      result.error = anchorError.errorLogs;
+      return result;
+    }
+  }
+
+  /**
+   * Create a comment
+   * @param profilePDA
+   * @param communityPDA
+   * @param activityPDA
+   * @param uriComment
+   * @returns
+   */
+  async createComment(
+    profilePDA: PublicKey,
+    activityPDA: PublicKey,
+    uriComment: string,
+    communityPDA: PublicKey = null,
+    followingprofilePDA: PublicKey = null
+  ): Promise<TxResult> {
+    const result: TxResult = {
+      txHash: null,
+      error: null,
+    };
+    const remainingAccounts = [];
+
+    const user = this.program.provider.publicKey;
+
+    try {
+      const activityAccountInfo = await this.getActivityAccountInfo(
+        activityPDA
+      );
+      if (activityAccountInfo === null) {
+        result.error = "Activity Account not exist";
+        return result;
+      }
+
+      const commentConditions = JSON.parse(
+        JSON.stringify(activityAccountInfo)
+      ).commentConditions;
+
+      if ("sameCommunity" in commentConditions) {
+        if (communityPDA === null) {
+          result.error = "CommunityPDA must be provided";
+          return result;
+        }
+        const communityAccountInfo = await this.getCommunityAccountInfo(
+          communityPDA
+        );
+
+        if (communityAccountInfo === null) {
+          result.error = "Community Account not exist";
+          return result;
+        }
+
+        if (
+          "id" in communityAccountInfo &&
+          "communityId" in activityAccountInfo
+        ) {
+          const communityId_1 = communityAccountInfo.id as BN;
+          const communityId_2 = activityAccountInfo.communityId as BN;
+
+          if (!communityId_1.eq(communityId_2)) {
+            result.error = "Comment must be in the same community";
+            return result;
+          }
+        }
+      } else if ("onlyFollowers" in commentConditions) {
+        communityPDA = null;
+
+        //  1:is_followingprofilePDA
+        //  ata_address
+
+        if (followingprofilePDA === null) {
+          result.error = "followingprofilePDA must be provided";
+          return result;
+        }
+        const isFollowingProfileAccountInfo = await this.getProfileAccountInfo(
+          followingprofilePDA
+        );
+        if (isFollowingProfileAccountInfo === null) {
+          result.error = "followingprofile Account not exist";
+          return result;
+        }
+
+        if (
+          "id" in isFollowingProfileAccountInfo &&
+          "profileId" in activityAccountInfo
+        ) {
+          const profileId_1 = isFollowingProfileAccountInfo.id as BN;
+          const profileId_2 = activityAccountInfo.profileId as BN;
+
+          if (!profileId_1.eq(profileId_2)) {
+            result.error = "Comment must be in the same community";
+            return result;
+          } else {
+            const followMint = this.getProfileFollowMint(followingprofilePDA);
+            const user_follow_ata = getAssociatedTokenAddress(followMint, user);
+
+            remainingAccounts.push({
+              pubkey: followingprofilePDA,
+              isSigner: false,
+              isWritable: true,
+            });
+            remainingAccounts.push({
+              pubkey: user_follow_ata,
+              isSigner: false,
+              isWritable: true,
+            });
+          }
+        }
+      }
+    } catch (error) {}
+
+    try {
+      const communityMint = this.getCommunityJoinMint(communityPDA);
+
+      const tx = await this.program.methods
+        .createComment(uriComment)
+        .accountsPartial({
+          user: user,
+          profile: profilePDA,
+          activity: activityPDA,
+          community: communityPDA,
+          communityMint: communityMint,
+          userCommunityAta: getAssociatedTokenAddress(communityMint, user),
+          // comment: commentPDA,
+          systemProgram: web3.SystemProgram.programId,
+        })
+        .remainingAccounts(remainingAccounts)
+        .rpc();
+      await this.program.provider.connection.confirmTransaction(tx);
+      result.txHash = tx;
+      return result;
+    } catch (error) {
+      const anchorError = error as AnchorError;
+      result.error = anchorError.errorLogs;
+      return result;
+    }
+  }
+
+  async setCommentConditions(
+    profilePDA: PublicKey,
+    activityPDA: PublicKey,
+    commentCondition: CommentCondition
   ): Promise<TxResult> {
     const result: TxResult = {
       txHash: null,
@@ -569,22 +769,29 @@ export class OSPProgram {
     try {
       const user = this.program.provider.publicKey;
 
-      const communityMint = this.getCommunityJoinMint(communityPDA);
-      console.log(communityPDA);
-      console.log(communityMint);
+      let commentConditions = null;
+
+      switch (commentCondition) {
+        case CommentCondition.None:
+          break;
+        case CommentCondition.OnlyFollowers:
+          commentConditions = { onlyFollowers: {} };
+          break;
+        case CommentCondition.SameCommunity:
+          commentConditions = { sameCommunity: {} };
+        default:
+          break;
+      }
 
       const tx = await this.program.methods
-        .createActivity(uriPost)
+        .setCommentConditions(commentConditions)
         .accountsPartial({
           user: user,
           profile: profilePDA,
-          community: communityPDA,
-          communityMint: communityMint,
-          userCommunityAta: getAssociatedTokenAddress(communityMint, user),
-          // activity,
-          systemProgram: web3.SystemProgram.programId,
+          activity: activityPDA,
         })
         .rpc();
+
       await this.program.provider.connection.confirmTransaction(tx);
       result.txHash = tx;
       return result;
