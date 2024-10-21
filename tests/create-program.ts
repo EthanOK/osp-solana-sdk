@@ -1,4 +1,4 @@
-import { Wallet } from "@coral-xyz/anchor";
+import { BN, Wallet } from "@coral-xyz/anchor";
 import { Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import {
   CommentCondition,
@@ -186,10 +186,10 @@ async function main() {
   );
   console.log("setCommentConditions_tx:", setCommentConditions_tx);
 
-  console.log(
-    "activityPDA Info:",
-    await program2.getActivityAccountInfo(activityPDA2)
+  const activity2AccountInfo = await program2.getActivityAccountInfo(
+    activityPDA2
   );
+  console.log("Activity2AccountInfo:", activity2AccountInfo);
 
   const createComment_tx = await program2.createComment(
     user2ProfilePDA,
@@ -227,7 +227,7 @@ async function main() {
     1
   );
 
-  //use1 create megaphone 
+  //use1 create megaphone
   const createMegaphone_tx = await program.createMegaphone(
     user2ProfilePDA,
     activityPDA2,
@@ -237,6 +237,15 @@ async function main() {
     3600
   );
   console.log("createMegaphone_tx:", createMegaphone_tx);
+
+  const megaphonePDA = program.getMegaphonePDA(
+    user1.publicKey,
+    ((activity2AccountInfo as any).contentId as BN).toNumber()
+  );
+  const megaphoneAccountInfo = await program.getMegaphoneAccountInfo(
+    megaphonePDA
+  );
+  console.log("megaphoneAccountInfo:", megaphoneAccountInfo);
 }
 
 main();

@@ -52,9 +52,18 @@ export type TxResult = {
   error: any | null;
 };
 
+/**
+ * OSP Program
+ */
 export class OSPProgram {
   program: Program<OpenSocial>;
 
+  /**
+   * Initialize OSP program
+   * @param idl
+   * @param connection
+   * @param wallet
+   */
   constructor(idl: any, connection: Connection, wallet: Wallet) {
     const provider = new AnchorProvider(connection, wallet);
     const program = new Program(idl, provider);
@@ -65,21 +74,38 @@ export class OSPProgram {
     return await this.program.provider.connection.getBalance(account);
   }
 
+  /**
+   * Get account info
+   * @returns
+   */
   async getAccountInfo(
     account: PublicKey
   ): Promise<AccountInfo<Buffer> | null> {
-    return await this.program.provider.connection.getAccountInfo(account);
-  }
-
-  async getStorageAccountInfo(account: PublicKey): Promise<Object | null> {
     try {
-      return await this.program.account.ospStorage.fetch(account);
+      return await this.program.provider.connection.getAccountInfo(account);
     } catch (error) {
-      console.log(error);
+      console.log(`account not exist`);
       return null;
     }
   }
 
+  /**
+   * Get storage account info
+   * @returns
+   */
+  async getStorageAccountInfo(account: PublicKey): Promise<Object | null> {
+    try {
+      return await this.program.account.ospStorage.fetch(account);
+    } catch (error) {
+      `${account} not is storage account`;
+      return null;
+    }
+  }
+
+  /**
+   * Get profile PDA
+   * @returns
+   */
   async getProfileAccountInfo(account: PublicKey): Promise<{
     id: BN;
     handle: string;
@@ -99,6 +125,10 @@ export class OSPProgram {
     }
   }
 
+  /**
+   * Get community PDA
+   * @returns
+   */
   async getCommunityAccountInfo(account: PublicKey): Promise<Object | null> {
     try {
       return await this.program.account.community.fetch(account);
@@ -108,6 +138,10 @@ export class OSPProgram {
     }
   }
 
+  /**
+   * Get activity PDA
+   * @returns
+   */
   async getActivityAccountInfo(account: PublicKey): Promise<Object | null> {
     try {
       return await this.program.account.activity.fetch(account);
@@ -117,6 +151,10 @@ export class OSPProgram {
     }
   }
 
+  /**
+   * Get comment PDA
+   * @returns
+   */
   async getCommentAccountInfo(account: PublicKey): Promise<Object | null> {
     try {
       return await this.program.account.comment.fetch(account);
@@ -126,6 +164,10 @@ export class OSPProgram {
     }
   }
 
+  /**
+   * Get megaphone PDA
+   * @returns
+   */
   async getMegaphoneAccountInfo(account: PublicKey): Promise<Object | null> {
     try {
       return await this.program.account.megaphone.fetch(account);
@@ -135,6 +177,10 @@ export class OSPProgram {
     }
   }
 
+  /**
+   * Get storage PDA
+   * @returns
+   */
   getStoragePDA(): PublicKey {
     return PublicKey.findProgramAddressSync(
       [Buffer.from("storage")],
@@ -142,6 +188,11 @@ export class OSPProgram {
     )[0];
   }
 
+  /**
+   * Get profile PDA
+   * @param handle
+   * @returns
+   */
   getProfilePDA(handle: string): PublicKey {
     try {
       return PublicKey.findProgramAddressSync(
@@ -153,6 +204,11 @@ export class OSPProgram {
     }
   }
 
+  /**
+   * Get profile nft
+   * @param profilePDA
+   * @returns
+   */
   getProfileNFT(profilePDA: PublicKey): PublicKey {
     try {
       return PublicKey.findProgramAddressSync(
@@ -164,6 +220,11 @@ export class OSPProgram {
     }
   }
 
+  /**
+   * Get profile follow mint
+   * @param user
+   * @returns
+   */
   getProfileFollowMint(user: PublicKey): PublicKey {
     try {
       return PublicKey.findProgramAddressSync(
@@ -175,6 +236,11 @@ export class OSPProgram {
     }
   }
 
+  /**
+   * Get community PDA
+   * @param handle
+   * @returns
+   */
   getCommunityPDA(handle: string): PublicKey {
     try {
       return PublicKey.findProgramAddressSync(
@@ -186,6 +252,11 @@ export class OSPProgram {
     }
   }
 
+  /**
+   * Get community nft
+   * @param communityPDA
+   * @returns
+   */
   getCommunityNFT(communityPDA: PublicKey): PublicKey {
     try {
       return PublicKey.findProgramAddressSync(
@@ -196,6 +267,12 @@ export class OSPProgram {
       return null;
     }
   }
+
+  /**
+   * Get community join mint
+   * @param communityPDA
+   * @returns
+   */
   getCommunityJoinMint(communityPDA: PublicKey): PublicKey | null {
     try {
       return PublicKey.findProgramAddressSync(
@@ -207,6 +284,11 @@ export class OSPProgram {
     }
   }
 
+  /**
+   * Get collection PDA
+   * @param seed
+   * @returns
+   */
   getCollectionPDA(seed: string): PublicKey {
     try {
       return PublicKey.findProgramAddressSync(
@@ -218,6 +300,12 @@ export class OSPProgram {
     }
   }
 
+  /**
+   * Get activity PDA
+   * @param profileHandle
+   * @param contentCount
+   * @returns
+   */
   getActivityPDA(
     profileHandle: string,
     contentCount: number
@@ -236,6 +324,12 @@ export class OSPProgram {
     }
   }
 
+  /**
+   * Get comment PDA
+   * @param activityPDA
+   * @param commentCounter
+   * @returns
+   */
   getCommentPDA(
     activityPDA: PublicKey,
     commentCounter: number
@@ -254,13 +348,19 @@ export class OSPProgram {
     }
   }
 
-  getMegaphonePDA(user: PublicKey, contentCount: number): PublicKey | null {
+  /**
+   * Get megaphone PDA
+   * @param user
+   * @param contentId
+   * @returns
+   */
+  getMegaphonePDA(user: PublicKey, contentId: number): PublicKey | null {
     try {
       return PublicKey.findProgramAddressSync(
         [
           Buffer.from("megaphone"),
           user.toBuffer(),
-          new BN(contentCount).toArrayLike(Buffer, "le", 4),
+          new BN(contentId).toArrayLike(Buffer, "le", 8),
         ],
         this.program.programId
       )[0];
@@ -269,6 +369,10 @@ export class OSPProgram {
     }
   }
 
+  /**
+   * Initialize storage account
+   * @returns
+   */
   async initializeStorage(): Promise<TxResult> {
     const result: TxResult = {
       txHash: null,
@@ -325,6 +429,7 @@ export class OSPProgram {
           storage: this.getStoragePDA(),
           profile: profilePDA,
           mint: profileNFT,
+          // TODO
           collection: this.getCollectionPDA("profile"),
           destination: destination,
           metadata: getMetadata(profileNFT),
@@ -717,9 +822,6 @@ export class OSPProgram {
       } else if ("onlyFollowers" in commentConditions) {
         communityPDA = null;
 
-        //  1:is_followingprofilePDA
-        //  ata_address
-
         if (followingprofilePDA === null) {
           result.error = "followingprofilePDA must be provided";
           return result;
@@ -790,6 +892,13 @@ export class OSPProgram {
     }
   }
 
+  /**
+   * Set comment conditions
+   * @param profilePDA
+   * @param activityPDA
+   * @param commentCondition
+   * @returns
+   */
   async setCommentConditions(
     profilePDA: PublicKey,
     activityPDA: PublicKey,
@@ -894,6 +1003,16 @@ export class OSPProgram {
     }
   }
 
+  /**
+   * Create Megaphone
+   * @param profilePDA
+   * @param activityPDA
+   * @param tags
+   * @param currency
+   * @param amount
+   * @param duration
+   * @returns
+   */
   async createMegaphone(
     profilePDA: PublicKey,
     activityPDA: PublicKey,
@@ -930,7 +1049,7 @@ export class OSPProgram {
           userProfile: profilePDA,
           userAta: userAta,
           referencedActivity: activityPDA,
-          // megaphone: megaphonePDA,
+          //  megaphone: this.getMegaphonePDA(),
           treasury: OSP_MEGAPHONE_TREASURY,
           treasuryAta: treasuryAta,
           systemProgram: web3.SystemProgram.programId,
@@ -948,6 +1067,12 @@ export class OSPProgram {
   }
 }
 
+/**
+ * Get Associated Token Address
+ * @param mint
+ * @param owner
+ * @returns
+ */
 export const getAssociatedTokenAddress = (
   mint: PublicKey,
   owner: PublicKey
