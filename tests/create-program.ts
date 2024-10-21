@@ -43,7 +43,7 @@ async function main() {
   console.log("activityAccount:\n", activityAccount);
 
   const commentAccount = await program.getCommentAccountInfo(
-    new PublicKey("6GabCJZMMY9ob6tzaHPnaeHD53csPs44hZZdHjErD5vC")
+    new PublicKey("6fsEoC8feGM1Hg4YtkP54D2QaDDZiL7WUentoDDF3FQo")
   );
   console.log("commentAccount:\n", commentAccount);
 
@@ -157,7 +157,13 @@ async function main() {
   );
   console.log("joinCommunity_tx:", joinCommunity_tx);
 
-  const activityPDA2 = await program2.getActivityPDA(user2ProfilePDA);
+  let user2ProfileAccountInfo = await program.getProfileAccountInfo(
+    user2ProfilePDA
+  );
+  const activityPDA2 = program2.getActivityPDA(
+    user2ProfileAccountInfo.handle,
+    user2ProfileAccountInfo.contentCount
+  );
 
   const createActivity_tx = await program2.createActivity(
     user2ProfilePDA,
@@ -213,6 +219,19 @@ async function main() {
     user2ProfilePDA
   );
   console.log("createComment_tx1:", createComment_tx1);
+
+  const deleteComment_tx = await program.deleteComment(
+    user1ProfilePDA,
+    activityPDA2,
+    1
+  );
+  console.log("deleteComment_tx:", deleteComment_tx);
+  const deleteComment_tx_ = await program.deleteComment(
+    user1ProfilePDA,
+    activityPDA2,
+    1
+  );
+  console.log("deleteComment_tx_:", deleteComment_tx_);
 }
 
 main();

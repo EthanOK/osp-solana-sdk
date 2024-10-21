@@ -40,6 +40,8 @@
     "build": "tsup ./src/index.ts --format esm,cjs --dts",
     "typedoc": "typedoc src/index.ts",
     "link osp-solana-sdk": "npm link osp-solana-sdk",
-    "test": "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/demo.spec.ts"
+    "test": "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/demo.spec.ts",
+    "listen events": "ts-node tests/subscript-events.ts",
+    "test osp sdk":"ts-node tests/create-program.ts"
   }
 }

@@ -155,10 +155,10 @@ export class OSPProgram {
     }
   }
 
-  getProfileFollowMint(profilePDA: PublicKey): PublicKey {
+  getProfileFollowMint(user: PublicKey): PublicKey {
     try {
       return PublicKey.findProgramAddressSync(
-        [Buffer.from("follow_mint"), profilePDA.toBytes()],
+        [Buffer.from("follow_mint"), user.toBytes()],
         this.program.programId
       )[0];
     } catch (error) {
@@ -190,7 +190,7 @@ export class OSPProgram {
   getCommunityJoinMint(communityPDA: PublicKey): PublicKey | null {
     try {
       return PublicKey.findProgramAddressSync(
-        [Buffer.from("follow_mint"), communityPDA.toBytes()],
+        [Buffer.from("join_mint"), communityPDA.toBytes()],
         this.program.programId
       )[0];
     } catch (error) {
@@ -209,44 +209,39 @@ export class OSPProgram {
     }
   }
 
-  async getActivityPDA(profilePDA: PublicKey): Promise<PublicKey> {
+  getActivityPDA(
+    profileHandle: string,
+    contentCount: number
+  ): PublicKey | null {
     try {
-      const profile = await this.getProfileAccountInfo(profilePDA);
-      if (profile == null) {
-        return null;
-      } else {
-        return PublicKey.findProgramAddressSync(
-          [
-            Buffer.from("activity"),
-            Buffer.from(profile.handle),
-            new BN(profile.contentCount).toArrayLike(Buffer, "le", 4),
-          ],
-          this.program.programId
-        )[0];
-      }
+      return PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("activity"),
+          Buffer.from(profileHandle),
+          new BN(contentCount).toArrayLike(Buffer, "le", 4),
+        ],
+        this.program.programId
+      )[0];
     } catch (error) {
       return null;
     }
   }
 
-  async getCommentPDA(activityPDA: PublicKey): Promise<PublicKey> {
-    const activity = await this.getActivityAccountInfo(activityPDA);
-
-    if (activity == null) {
+  getCommentPDA(
+    activityPDA: PublicKey,
+    commentCounter: number
+  ): PublicKey | null {
+    try {
+      return PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("comment"),
+          activityPDA.toBytes(),
+          new BN(commentCounter).toArrayLike(Buffer, "le", 8),
+        ],
+        this.program.programId
+      )[0];
+    } catch (error) {
       return null;
-    } else if ("commentCount" in activity) {
-      try {
-        return PublicKey.findProgramAddressSync(
-          [
-            Buffer.from("comment"),
-            activityPDA.toBytes(),
-            (activity.commentCount as BN).toArrayLike(Buffer, "le", 8),
-          ],
-          this.program.programId
-        )[0];
-      } catch (error) {
-        return null;
-      }
     }
   }
 
@@ -291,9 +286,10 @@ export class OSPProgram {
       error: null,
     };
     try {
+      const user = this.program.provider.publicKey;
       const profilePDA = this.getProfilePDA(handle);
       const profileNFT = this.getProfileNFT(profilePDA);
-      const profileFollowMint = this.getProfileFollowMint(profilePDA);
+      const profileFollowMint = this.getProfileFollowMint(user);
       const destination = getAssociatedTokenAddressSync(
         profileNFT,
         this.program.provider.publicKey
@@ -301,7 +297,7 @@ export class OSPProgram {
       const tx = await this.program.methods
         .initializeProfile(handle, uriProfile, uriFollowMint)
         .accountsPartial({
-          user: this.program.provider.publicKey,
+          user: user,
           storage: this.getStoragePDA(),
           profile: profilePDA,
           mint: profileNFT,
@@ -346,10 +342,15 @@ export class OSPProgram {
     try {
       const follower = this.program.provider.publicKey;
 
-      const followedMint = this.getProfileFollowMint(followedProfile);
-
       const followedProfileAccountInfo = await this.getProfileAccountInfo(
         followedProfile
+      );
+      if (followedProfileAccountInfo == null) {
+        result.error = `${followedProfile}: Not Exist`;
+        return result;
+      }
+      const followedMint: PublicKey = this.getProfileFollowMint(
+        followedProfileAccountInfo.address
       );
       const remainingAccounts = [];
 
@@ -597,6 +598,13 @@ export class OSPProgram {
       const user = this.program.provider.publicKey;
       const communityMint = this.getCommunityJoinMint(communityPDA);
 
+      const profileAccountInfo = await this.getProfileAccountInfo(profilePDA);
+
+      if (profileAccountInfo === null) {
+        result.error = "Profile Account not exist";
+        return result;
+      }
+
       const tx = await this.program.methods
         .createActivity(uriActivity)
         .accountsPartial({
@@ -605,7 +613,7 @@ export class OSPProgram {
           community: communityPDA,
           communityMint: communityMint,
           userCommunityAta: getAssociatedTokenAddress(communityMint, user),
-          // activity: await this.getActivityPDA(profilePDA),
+          // activity: this.getActivityPDA(profileAccountInfo.handle,profileAccountInfo.contentCount),
           systemProgram: web3.SystemProgram.programId,
         })
         .rpc();
@@ -711,7 +719,9 @@ export class OSPProgram {
             result.error = "Comment must be in the same community";
             return result;
           } else {
-            const followMint = this.getProfileFollowMint(followingprofilePDA);
+            const followMint = this.getProfileFollowMint(
+              isFollowingProfileAccountInfo.address
+            );
             const user_follow_ata = getAssociatedTokenAddress(followMint, user);
 
             remainingAccounts.push({
@@ -792,6 +802,57 @@ export class OSPProgram {
         })
         .rpc();
 
+      await this.program.provider.connection.confirmTransaction(tx);
+      result.txHash = tx;
+      return result;
+    } catch (error) {
+      const anchorError = error as AnchorError;
+      result.error = anchorError.errorLogs;
+      return result;
+    }
+  }
+
+  async deleteComment(
+    profilePDA: PublicKey,
+    activityPDA: PublicKey,
+    commentCounter: number
+  ): Promise<TxResult> {
+    const result: TxResult = {
+      txHash: null,
+      error: null,
+    };
+    const activityAccountInfo = await this.getActivityAccountInfo(activityPDA);
+    if (activityAccountInfo === null) {
+      result.error = "Activity Account not exist";
+      return result;
+    }
+    if ("commentCounter" in activityAccountInfo) {
+      if (
+        commentCounter >= (activityAccountInfo.commentCounter as BN).toNumber()
+      ) {
+        result.error = "Invalid commentCounter";
+        return result;
+      }
+    }
+    const commentPDA = this.getCommentPDA(activityPDA, commentCounter);
+    const commentAccountInfo = await this.getCommentAccountInfo(commentPDA);
+    if (commentAccountInfo === null) {
+      result.error = "Comment Account already deleted";
+      return result;
+    }
+
+    try {
+      const user = this.program.provider.publicKey;
+      const tx = await this.program.methods
+        .deleteComment(new BN(commentCounter))
+        .accountsPartial({
+          user: user,
+          profile: profilePDA,
+          activity: activityPDA,
+          // comment: this.getCommentPDA(activityPDA, commentCounter),
+          systemProgram: web3.SystemProgram.programId,
+        })
+        .rpc();
       await this.program.provider.connection.confirmTransaction(tx);
       result.txHash = tx;
       return result;
