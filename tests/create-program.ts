@@ -1,7 +1,8 @@
 import { Wallet } from "@coral-xyz/anchor";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import {
   CommentCondition,
+  Currency,
   FollowCondition,
   getDevConnection,
   getLocalConnection,
@@ -225,13 +226,17 @@ async function main() {
     activityPDA2,
     1
   );
-  console.log("deleteComment_tx:", deleteComment_tx);
-  const deleteComment_tx_ = await program.deleteComment(
-    user1ProfilePDA,
+
+  //use1 create megaphone 
+  const createMegaphone_tx = await program.createMegaphone(
+    user2ProfilePDA,
     activityPDA2,
-    1
+    ["mgp"],
+    Currency.SOL,
+    LAMPORTS_PER_SOL,
+    3600
   );
-  console.log("deleteComment_tx_:", deleteComment_tx_);
+  console.log("createMegaphone_tx:", createMegaphone_tx);
 }
 
 main();

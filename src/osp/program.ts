@@ -19,7 +19,11 @@ import {
   getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
 import { getMasterEdition, getMetadata } from "../util/utils";
-import { TOKEN_METADATA_PROGRAM_ID } from "./constant";
+import {
+  OSP_MEGAPHONE_TREASURY,
+  TOKEN_METADATA_PROGRAM_ID,
+  USDC,
+} from "./constant";
 
 const additionalComputeBudgetInstruction =
   ComputeBudgetProgram.setComputeUnitLimit({
@@ -36,6 +40,11 @@ export enum CommentCondition {
   None,
   OnlyFollowers,
   SameCommunity,
+}
+
+export enum Currency {
+  SOL,
+  USDC,
 }
 
 export type TxResult = {
@@ -237,6 +246,21 @@ export class OSPProgram {
           Buffer.from("comment"),
           activityPDA.toBytes(),
           new BN(commentCounter).toArrayLike(Buffer, "le", 8),
+        ],
+        this.program.programId
+      )[0];
+    } catch (error) {
+      return null;
+    }
+  }
+
+  getMegaphonePDA(user: PublicKey, contentCount: number): PublicKey | null {
+    try {
+      return PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("megaphone"),
+          user.toBuffer(),
+          new BN(contentCount).toArrayLike(Buffer, "le", 4),
         ],
         this.program.programId
       )[0];
@@ -812,6 +836,13 @@ export class OSPProgram {
     }
   }
 
+  /**
+   * Delete Comment
+   * @param profilePDA
+   * @param activityPDA
+   * @param commentCounter
+   * @returns
+   */
   async deleteComment(
     profilePDA: PublicKey,
     activityPDA: PublicKey,
@@ -851,6 +882,59 @@ export class OSPProgram {
           activity: activityPDA,
           // comment: this.getCommentPDA(activityPDA, commentCounter),
           systemProgram: web3.SystemProgram.programId,
+        })
+        .rpc();
+      await this.program.provider.connection.confirmTransaction(tx);
+      result.txHash = tx;
+      return result;
+    } catch (error) {
+      const anchorError = error as AnchorError;
+      result.error = anchorError.errorLogs;
+      return result;
+    }
+  }
+
+  async createMegaphone(
+    profilePDA: PublicKey,
+    activityPDA: PublicKey,
+    tags: string[],
+    currency: Currency,
+    amount: number,
+    duration: number
+  ): Promise<TxResult> {
+    const result: TxResult = {
+      txHash: null,
+      error: null,
+    };
+
+    const user = this.program.provider.publicKey;
+
+    let currency_: any = { sol: {} };
+    let userAta = null;
+    let treasuryAta = null;
+
+    switch (currency) {
+      case Currency.USDC:
+        currency_ = { usdc: {} };
+        userAta = getAssociatedTokenAddress(USDC, user);
+        treasuryAta = getAssociatedTokenAddress(USDC, OSP_MEGAPHONE_TREASURY);
+        break;
+      default:
+        break;
+    }
+    try {
+      const tx = await this.program.methods
+        .createMegaphone(tags, currency_, new BN(amount), new BN(duration))
+        .accountsPartial({
+          user: user,
+          userProfile: profilePDA,
+          userAta: userAta,
+          referencedActivity: activityPDA,
+          // megaphone: megaphonePDA,
+          treasury: OSP_MEGAPHONE_TREASURY,
+          treasuryAta: treasuryAta,
+          systemProgram: web3.SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
         })
         .rpc();
       await this.program.provider.connection.confirmTransaction(tx);
