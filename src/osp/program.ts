@@ -20,7 +20,9 @@ import {
 } from "@solana/spl-token";
 import { getMasterEdition, getMetadata } from "../util/utils";
 import {
+  OSP_IDL,
   OSP_MEGAPHONE_TREASURY,
+  OSP_PROGRAM_ID,
   TOKEN_METADATA_PROGRAM_ID,
   USDC,
 } from "./constant";
@@ -47,6 +49,13 @@ export enum Currency {
   USDC,
 }
 
+export enum OpenReaction {
+  Like,
+  VoteUp,
+  VoteDown,
+  VoteCancel,
+}
+
 export type TxResult = {
   txHash: string | null;
   error: any | null;
@@ -60,13 +69,19 @@ export class OSPProgram {
 
   /**
    * Initialize OSP program
-   * @param idl
    * @param connection
    * @param wallet
+   * @param programId
    */
-  constructor(idl: any, connection: Connection, wallet: Wallet) {
+  constructor(connection: Connection, wallet: Wallet, programId?: PublicKey) {
+    let idl = OSP_IDL;
     const provider = new AnchorProvider(connection, wallet);
-    const program = new Program(idl, provider);
+    if (programId) {
+      idl.address = programId.toString();
+    } else {
+      idl.address = OSP_PROGRAM_ID.toString();
+    }
+    const program = new Program(idl as any, provider);
     this.program = program;
   }
 
@@ -725,7 +740,7 @@ export class OSPProgram {
 
     try {
       const user = this.program.provider.publicKey;
-      const communityMint = this.getCommunityJoinMint(communityPDA);
+      const joinMint = this.getCommunityJoinMint(communityPDA);
 
       const profileAccountInfo = await this.getProfileAccountInfo(profilePDA);
 
@@ -740,8 +755,8 @@ export class OSPProgram {
           user: user,
           profile: profilePDA,
           community: communityPDA,
-          communityMint: communityMint,
-          userCommunityAta: getAssociatedTokenAddress(communityMint, user),
+          joinMint: joinMint,
+          joinMintAta: getAssociatedTokenAddress(joinMint, user),
           // activity: this.getActivityPDA(profileAccountInfo.handle,profileAccountInfo.contentCount),
           systemProgram: web3.SystemProgram.programId,
         })
@@ -866,7 +881,7 @@ export class OSPProgram {
     } catch (error) {}
 
     try {
-      const communityMint = this.getCommunityJoinMint(communityPDA);
+      const joinMint = this.getCommunityJoinMint(communityPDA);
 
       const tx = await this.program.methods
         .createComment(uriComment)
@@ -875,8 +890,8 @@ export class OSPProgram {
           profile: profilePDA,
           activity: activityPDA,
           community: communityPDA,
-          communityMint: communityMint,
-          userCommunityAta: getAssociatedTokenAddress(communityMint, user),
+          joinMint: joinMint,
+          joinMintAta: getAssociatedTokenAddress(joinMint, user),
           // comment: commentPDA,
           systemProgram: web3.SystemProgram.programId,
         })
@@ -1054,6 +1069,50 @@ export class OSPProgram {
           treasuryAta: treasuryAta,
           systemProgram: web3.SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .rpc();
+      await this.program.provider.connection.confirmTransaction(tx);
+      result.txHash = tx;
+      return result;
+    } catch (error) {
+      const anchorError = error as AnchorError;
+      result.error = anchorError.errorLogs;
+      return result;
+    }
+  }
+
+  async createOpenReaction(
+    profilePDA: PublicKey,
+    activityPDA: PublicKey,
+    reaction: OpenReaction
+  ): Promise<TxResult> {
+    const result: TxResult = {
+      txHash: null,
+      error: null,
+    };
+    let openReaction;
+
+    switch (reaction) {
+      case OpenReaction.Like:
+        openReaction = { like: {} };
+        break;
+      case OpenReaction.VoteUp:
+        openReaction = { voteUp: {} };
+        break;
+      case OpenReaction.VoteDown:
+        openReaction = { voteDown: {} };
+        break;
+      case OpenReaction.VoteCancel:
+        openReaction = { voteCancel: {} };
+    }
+
+    try {
+      const tx = await this.program.methods
+        .createOpenReaction(openReaction)
+        .accountsPartial({
+          user: this.program.provider.publicKey,
+          profile: profilePDA,
+          activity: activityPDA,
         })
         .rpc();
       await this.program.provider.connection.confirmTransaction(tx);

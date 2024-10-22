@@ -6,6 +6,7 @@ import {
   FollowCondition,
   getDevConnection,
   getLocalConnection,
+  OpenReaction,
   OSP_IDL,
   OSPProgram,
   requestAirdrop,
@@ -20,8 +21,8 @@ async function main() {
   await requestAirdrop(connection, user1.publicKey);
   await requestAirdrop(connection, user2.publicKey);
 
-  const program = new OSPProgram(OSP_IDL, connection, new Wallet(user1));
-  const program2 = new OSPProgram(OSP_IDL, connection, new Wallet(user2));
+  const program = new OSPProgram(connection, new Wallet(user1));
+  const program2 = new OSPProgram(connection, new Wallet(user2));
 
   const storageAccount = await program.getStorageAccountInfo(
     new PublicKey("DUNjGpYgP97mSoJ7VCMDGSz61vYsrSJ7JrhszSB8gdmR")
@@ -229,7 +230,7 @@ async function main() {
 
   //use1 create megaphone
   const createMegaphone_tx = await program.createMegaphone(
-    user2ProfilePDA,
+    user1ProfilePDA,
     activityPDA2,
     ["mgp"],
     Currency.SOL,
@@ -246,6 +247,13 @@ async function main() {
     megaphonePDA
   );
   console.log("megaphoneAccountInfo:", megaphoneAccountInfo);
+
+  const createOpenReaction_tx = await program.createOpenReaction(
+    user1ProfilePDA,
+    activityPDA2,
+    OpenReaction.VoteUp
+  );
+  console.log("createOpenReaction_tx:", createOpenReaction_tx);
 }
 
 main();

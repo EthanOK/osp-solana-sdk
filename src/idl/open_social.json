@@ -51,19 +51,17 @@
           }
         },
         {
-          "name": "community_mint",
+          "name": "join_mint",
           "optional": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  102,
+                  106,
                   111,
-                  108,
-                  108,
-                  111,
-                  119,
+                  105,
+                  110,
                   95,
                   109,
                   105,
@@ -83,7 +81,7 @@
           "optional": true
         },
         {
-          "name": "user_community_ata",
+          "name": "join_mint_ata",
           "optional": true,
           "pda": {
             "seeds": [
@@ -130,7 +128,7 @@
               },
               {
                 "kind": "account",
-                "path": "community_mint"
+                "path": "join_mint"
               }
             ],
             "program": {
@@ -266,7 +264,7 @@
           "optional": true
         },
         {
-          "name": "community_mint",
+          "name": "join_mint",
           "writable": true,
           "optional": true,
           "pda": {
@@ -274,14 +272,14 @@
               {
                 "kind": "const",
                 "value": [
-                  116,
-                  114,
+                  106,
+                  111,
                   105,
-                  98,
-                  101,
-                  95,
                   110,
-                  102,
+                  95,
+                  109,
+                  105,
+                  110,
                   116
                 ]
               },
@@ -293,7 +291,7 @@
           }
         },
         {
-          "name": "user_community_ata",
+          "name": "join_mint_ata",
           "optional": true,
           "pda": {
             "seeds": [
@@ -340,7 +338,7 @@
               },
               {
                 "kind": "account",
-                "path": "community_mint"
+                "path": "join_mint"
               }
             ],
             "program": {
@@ -643,12 +641,10 @@
               {
                 "kind": "const",
                 "value": [
-                  102,
+                  106,
                   111,
-                  108,
-                  108,
-                  111,
-                  119,
+                  105,
+                  110,
                   95,
                   109,
                   105,
@@ -1391,7 +1387,8 @@
               },
               {
                 "kind": "account",
-                "path": "followed_profile"
+                "path": "followed_profile.address",
+                "account": "Profile"
               }
             ]
           }
@@ -1720,7 +1717,7 @@
               },
               {
                 "kind": "account",
-                "path": "profile"
+                "path": "user"
               }
             ]
           }
@@ -1880,12 +1877,10 @@
               {
                 "kind": "const",
                 "value": [
-                  102,
+                  106,
                   111,
-                  108,
-                  108,
-                  111,
-                  119,
+                  105,
+                  110,
                   95,
                   109,
                   105,
@@ -2213,7 +2208,8 @@
               },
               {
                 "kind": "account",
-                "path": "followed_profile"
+                "path": "followed_profile.address",
+                "account": "Profile"
               }
             ]
           }
@@ -2580,6 +2576,11 @@
       "code": 6012,
       "name": "InvalidContentURI",
       "msg": "Inavlid Content URI"
+    },
+    {
+      "code": 6013,
+      "name": "MegaphoneNotExpired",
+      "msg": "Megaphone not expired"
     }
   ],
   "types": [

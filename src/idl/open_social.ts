@@ -57,19 +57,17 @@ export type OpenSocial = {
           }
         },
         {
-          "name": "communityMint",
+          "name": "joinMint",
           "optional": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  102,
+                  106,
                   111,
-                  108,
-                  108,
-                  111,
-                  119,
+                  105,
+                  110,
                   95,
                   109,
                   105,
@@ -89,7 +87,7 @@ export type OpenSocial = {
           "optional": true
         },
         {
-          "name": "userCommunityAta",
+          "name": "joinMintAta",
           "optional": true,
           "pda": {
             "seeds": [
@@ -136,7 +134,7 @@ export type OpenSocial = {
               },
               {
                 "kind": "account",
-                "path": "communityMint"
+                "path": "joinMint"
               }
             ],
             "program": {
@@ -272,7 +270,7 @@ export type OpenSocial = {
           "optional": true
         },
         {
-          "name": "communityMint",
+          "name": "joinMint",
           "writable": true,
           "optional": true,
           "pda": {
@@ -280,14 +278,14 @@ export type OpenSocial = {
               {
                 "kind": "const",
                 "value": [
-                  116,
-                  114,
+                  106,
+                  111,
                   105,
-                  98,
-                  101,
-                  95,
                   110,
-                  102,
+                  95,
+                  109,
+                  105,
+                  110,
                   116
                 ]
               },
@@ -299,7 +297,7 @@ export type OpenSocial = {
           }
         },
         {
-          "name": "userCommunityAta",
+          "name": "joinMintAta",
           "optional": true,
           "pda": {
             "seeds": [
@@ -346,7 +344,7 @@ export type OpenSocial = {
               },
               {
                 "kind": "account",
-                "path": "communityMint"
+                "path": "joinMint"
               }
             ],
             "program": {
@@ -649,12 +647,10 @@ export type OpenSocial = {
               {
                 "kind": "const",
                 "value": [
-                  102,
+                  106,
                   111,
-                  108,
-                  108,
-                  111,
-                  119,
+                  105,
+                  110,
                   95,
                   109,
                   105,
@@ -1397,7 +1393,8 @@ export type OpenSocial = {
               },
               {
                 "kind": "account",
-                "path": "followedProfile"
+                "path": "followed_profile.address",
+                "account": "profile"
               }
             ]
           }
@@ -1726,7 +1723,7 @@ export type OpenSocial = {
               },
               {
                 "kind": "account",
-                "path": "profile"
+                "path": "user"
               }
             ]
           }
@@ -1886,12 +1883,10 @@ export type OpenSocial = {
               {
                 "kind": "const",
                 "value": [
-                  102,
+                  106,
                   111,
-                  108,
-                  108,
-                  111,
-                  119,
+                  105,
+                  110,
                   95,
                   109,
                   105,
@@ -2219,7 +2214,8 @@ export type OpenSocial = {
               },
               {
                 "kind": "account",
-                "path": "followedProfile"
+                "path": "followed_profile.address",
+                "account": "profile"
               }
             ]
           }
@@ -2586,6 +2582,11 @@ export type OpenSocial = {
       "code": 6012,
       "name": "invalidContentUri",
       "msg": "Inavlid Content URI"
+    },
+    {
+      "code": 6013,
+      "name": "megaphoneNotExpired",
+      "msg": "Megaphone not expired"
     }
   ],
   "types": [

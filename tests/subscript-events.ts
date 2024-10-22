@@ -1,8 +1,8 @@
-import { getLocalConnection, OSP_IDL, OSPProgram } from "../src";
+import { getLocalConnection, OSP_IDL, OSP_PROGRAM_ID, OSPProgram } from "../src";
 
 async function main() {
   const connection = getLocalConnection();
-  const ospProgram = new OSPProgram(OSP_IDL, connection, null);
+  const ospProgram = new OSPProgram(connection, null);
   const subscriptionId_profileCreated = ospProgram.program.addEventListener(
     "profileCreated",
     (event) => {
@@ -38,7 +38,7 @@ async function main() {
     }
   );
 
-  const subscriptionId_megaphoneCreated =ospProgram.program.addEventListener(
+  const subscriptionId_megaphoneCreated = ospProgram.program.addEventListener(
     "megaphoneCreated",
     (event) => {
       console.log("megaphoneCreated:", event);
@@ -51,12 +51,17 @@ async function main() {
       console.log("commentCreated:", event);
     }
   );
-  const subscriptionId_commentCreatedd = ospProgram.program.addEventListener(
+  const subscriptionId_commentDeleted = ospProgram.program.addEventListener(
     "commentDeleted",
     (event) => {
       console.log("commentDeleted:", event);
     }
   );
+
+  const subscriptionId_openReactionCreated =
+    ospProgram.program.addEventListener("openReactionCreated", (event) => {
+      console.log("openReactionCreated:", event);
+    });
 }
 
 main().catch((error) => {
