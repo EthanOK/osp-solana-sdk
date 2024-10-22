@@ -254,6 +254,12 @@ async function main() {
     OpenReaction.VoteUp
   );
   console.log("createOpenReaction_tx:", createOpenReaction_tx);
+
+  let unfollowProfile_tx = await program.unfollowProfile(
+    user1ProfilePDA,
+    user2ProfilePDA
+  );
+  console.log("user1 unfollow user2 tx:", unfollowProfile_tx);
 }
 
 main();

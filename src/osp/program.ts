@@ -433,6 +433,13 @@ export class OSPProgram {
       const profilePDA = this.getProfilePDA(handle);
       const profileNFT = this.getProfileNFT(profilePDA);
       const profileFollowMint = this.getProfileFollowMint(user);
+      const profileFollowMintAccountInfo = await this.getAccountInfo(
+        profileFollowMint
+      );
+      if (profileFollowMintAccountInfo != null) {
+        result.error = `${profileFollowMint}: Already Exist`;
+        return result;
+      }
       const destination = getAssociatedTokenAddressSync(
         profileNFT,
         this.program.provider.publicKey
@@ -549,6 +556,44 @@ export class OSPProgram {
       result.txHash = tx;
       return result;
     } catch (error) {
+      const anchorError = error as AnchorError;
+      result.error = anchorError.errorLogs;
+      return result;
+    }
+  }
+
+  /**
+   *
+   * @param followerProfilePDA
+   * @param followedProfilePDA
+   * @returns
+   */
+  async unfollowProfile(
+    followerProfilePDA: PublicKey,
+    followedProfilePDA: PublicKey
+  ) {
+    const result: TxResult = {
+      txHash: null,
+      error: null,
+    };
+    try {
+      const follower = this.program.provider.publicKey;
+      const tx = await this.program.methods
+        .unfollowProfile()
+        .accountsPartial({
+          follower: follower,
+          followerProfile: followerProfilePDA,
+          followedProfile: followedProfilePDA,
+          // followMint,
+          // followerTokenAccount,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .rpc();
+        await this.program.provider.connection.confirmTransaction(tx);
+        result.txHash = tx;
+        return result;
+    } catch (error) {
+      console.log(error);
       const anchorError = error as AnchorError;
       result.error = anchorError.errorLogs;
       return result;
