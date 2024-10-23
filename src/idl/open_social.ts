@@ -1156,6 +1156,10 @@ export type OpenSocial = {
         {
           "name": "duration",
           "type": "u64"
+        },
+        {
+          "name": "megaphoneCtx",
+          "type": "bytes"
         }
       ]
     },
@@ -2515,6 +2519,19 @@ export type OpenSocial = {
         128,
         94
       ]
+    },
+    {
+      "name": "unfollowed",
+      "discriminator": [
+        181,
+        126,
+        70,
+        2,
+        95,
+        63,
+        168,
+        239
+      ]
     }
   ],
   "errors": [
@@ -2777,6 +2794,10 @@ export type OpenSocial = {
           },
           {
             "name": "referenceContentId",
+            "type": "u64"
+          },
+          {
+            "name": "commentId",
             "type": "u64"
           },
           {
@@ -3169,6 +3190,34 @@ export type OpenSocial = {
           {
             "name": "handle",
             "type": "string"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "ctx",
+            "type": "bytes"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unfollowed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "follower",
+            "type": "pubkey"
+          },
+          {
+            "name": "followerProfileId",
+            "type": "u64"
+          },
+          {
+            "name": "profileId",
+            "type": "u64"
           },
           {
             "name": "timestamp",

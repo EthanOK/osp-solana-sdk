@@ -18,6 +18,14 @@ async function main() {
   );
 
   const subscriptionId_unfollowed = ospProgram.program.addEventListener(
+    "unfollowed",
+    (event) => {
+      console.log("unfollowed:", event);
+    }
+  );
+
+
+  const subscriptionId_communityCreated = ospProgram.program.addEventListener(
     "communityCreated",
     (event) => {
       console.log("communityCreated:", event);

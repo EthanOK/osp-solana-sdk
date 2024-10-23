@@ -235,7 +235,8 @@ async function main() {
     ["mgp"],
     Currency.SOL,
     LAMPORTS_PER_SOL,
-    3600
+    3600,
+    Buffer.from("ctx object")
   );
   console.log("createMegaphone_tx:", createMegaphone_tx);
 

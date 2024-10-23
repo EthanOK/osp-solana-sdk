@@ -589,9 +589,9 @@ export class OSPProgram {
           tokenProgram: TOKEN_PROGRAM_ID,
         })
         .rpc();
-        await this.program.provider.connection.confirmTransaction(tx);
-        result.txHash = tx;
-        return result;
+      await this.program.provider.connection.confirmTransaction(tx);
+      result.txHash = tx;
+      return result;
     } catch (error) {
       console.log(error);
       const anchorError = error as AnchorError;
@@ -1071,6 +1071,7 @@ export class OSPProgram {
    * @param currency
    * @param amount
    * @param duration
+   * @param ctx
    * @returns
    */
   async createMegaphone(
@@ -1079,7 +1080,8 @@ export class OSPProgram {
     tags: string[],
     currency: Currency,
     amount: number,
-    duration: number
+    duration: number,
+    ctx: Buffer
   ): Promise<TxResult> {
     const result: TxResult = {
       txHash: null,
@@ -1103,7 +1105,7 @@ export class OSPProgram {
     }
     try {
       const tx = await this.program.methods
-        .createMegaphone(tags, currency_, new BN(amount), new BN(duration))
+        .createMegaphone(tags, currency_, new BN(amount), new BN(duration), ctx)
         .accountsPartial({
           user: user,
           userProfile: profilePDA,

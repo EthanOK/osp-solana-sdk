@@ -1150,6 +1150,10 @@
         {
           "name": "duration",
           "type": "u64"
+        },
+        {
+          "name": "megaphone_ctx",
+          "type": "bytes"
         }
       ]
     },
@@ -1279,7 +1283,7 @@
               },
               {
                 "kind": "arg",
-                "path": "_comment_number"
+                "path": "comment_number"
               }
             ]
           }
@@ -1291,7 +1295,7 @@
       ],
       "args": [
         {
-          "name": "_comment_number",
+          "name": "comment_number",
           "type": "u64"
         }
       ]
@@ -2509,6 +2513,19 @@
         128,
         94
       ]
+    },
+    {
+      "name": "Unfollowed",
+      "discriminator": [
+        181,
+        126,
+        70,
+        2,
+        95,
+        63,
+        168,
+        239
+      ]
     }
   ],
   "errors": [
@@ -2771,6 +2788,10 @@
           },
           {
             "name": "reference_content_id",
+            "type": "u64"
+          },
+          {
+            "name": "comment_id",
             "type": "u64"
           },
           {
@@ -3163,6 +3184,34 @@
           {
             "name": "handle",
             "type": "string"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "ctx",
+            "type": "bytes"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Unfollowed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "follower",
+            "type": "pubkey"
+          },
+          {
+            "name": "follower_profile_id",
+            "type": "u64"
+          },
+          {
+            "name": "profile_id",
+            "type": "u64"
           },
           {
             "name": "timestamp",
