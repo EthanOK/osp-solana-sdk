@@ -1,6 +1,6 @@
 {
   "name": "osp-solana-sdk",
-  "version": "0.0.1_2024_10_23_7ede9cbd",
+  "version": "0.0.1_2024_10_28_ea12e240",
   "description": "This is the Solana SDK for OSP",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

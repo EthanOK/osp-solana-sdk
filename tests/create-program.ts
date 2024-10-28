@@ -261,6 +261,17 @@ async function main() {
     user2ProfilePDA
   );
   console.log("user1 unfollow user2 tx:", unfollowProfile_tx);
+
+  followProfile_tx = await program.followProfile(
+    user1ProfilePDA,
+    user2ProfilePDA
+  );
+  console.log("user1 follow user2 tx:", followProfile_tx);
+  unfollowProfile_tx = await program.unfollowProfile(
+    user1ProfilePDA,
+    user2ProfilePDA
+  );
+  console.log("user1 unfollow user2 tx:", unfollowProfile_tx);
 }
 
 main();

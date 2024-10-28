@@ -11,6 +11,7 @@ import {
   ComputeBudgetProgram,
   Connection,
   PublicKey,
+  Transaction,
 } from "@solana/web3.js";
 import { OpenSocial } from "../idl/open_social";
 import {
@@ -430,6 +431,7 @@ export class OSPProgram {
     };
     try {
       const user = this.program.provider.publicKey;
+      const storagePDA = this.getStoragePDA();
       const profilePDA = this.getProfilePDA(handle);
       const profileNFT = this.getProfileNFT(profilePDA);
       const profileFollowMint = this.getProfileFollowMint(user);
@@ -444,7 +446,24 @@ export class OSPProgram {
         profileNFT,
         this.program.provider.publicKey
       );
-      const tx = await this.program.methods
+
+      const transactions = new Transaction();
+
+      const storageAccountInfo = await this.getStorageAccountInfo(storagePDA);
+
+      if (storageAccountInfo == null) {
+        const transaction_initializeStorage = await this.program.methods
+          .initializeStorage()
+          .accountsPartial({
+            authority: this.program.provider.publicKey,
+            ospStorage: this.getStoragePDA(),
+            systemProgram: web3.SystemProgram.programId,
+          })
+          .transaction();
+        transactions.add(transaction_initializeStorage);
+      }
+
+      const transaction_initializeProfile = await this.program.methods
         .initializeProfile(handle, uriProfile, uriFollowMint)
         .accountsPartial({
           user: user,
@@ -464,12 +483,16 @@ export class OSPProgram {
           tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
         })
         .preInstructions([additionalComputeBudgetInstruction])
-        .rpc();
+        .transaction();
 
+      transactions.add(transaction_initializeProfile);
+      const tx = await this.program.provider.sendAndConfirm(transactions);
       await this.program.provider.connection.confirmTransaction(tx);
       result.txHash = tx;
       return result;
     } catch (error) {
+      console.log(error);
+
       const anchorError = error as AnchorError;
       result.error = anchorError.errorLogs;
       return result;
@@ -1128,6 +1151,13 @@ export class OSPProgram {
     }
   }
 
+  /**
+   * Create Open Reaction
+   * @param profilePDA
+   * @param activityPDA
+   * @param reaction
+   * @returns
+   */
   async createOpenReaction(
     profilePDA: PublicKey,
     activityPDA: PublicKey,
