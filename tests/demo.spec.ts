@@ -1,6 +1,6 @@
 import { assert } from "chai";
 import { Keypair } from "@solana/web3.js";
-import {signMessage, verifySignature } from "../src";
+import { signMessage, verifySignature } from "../src";
 // import {signMessage, verifySignature } from "osp-solana-sdk";
 
 describe("Test solana signMessage", () => {

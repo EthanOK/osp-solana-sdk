@@ -35,7 +35,7 @@ export const getMetadata = (mint: PublicKey): PublicKey => {
     [
       Buffer.from("metadata"),
       TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-      mint.toBuffer(),
+      mint.toBuffer()
     ],
     TOKEN_METADATA_PROGRAM_ID
   )[0];
@@ -47,7 +47,7 @@ export const getMasterEdition = (mint: PublicKey): PublicKey => {
       Buffer.from("metadata"),
       TOKEN_METADATA_PROGRAM_ID.toBuffer(),
       mint.toBuffer(),
-      Buffer.from("edition"),
+      Buffer.from("edition")
     ],
     TOKEN_METADATA_PROGRAM_ID
   )[0];

@@ -1,4 +1,9 @@
-import { getLocalConnection, OSP_IDL, OSP_PROGRAM_ID, OSPProgram } from "../src";
+import {
+  getLocalConnection,
+  OSP_IDL,
+  OSP_PROGRAM_ID,
+  OSPProgram
+} from "../src";
 
 async function main() {
   const connection = getLocalConnection();
@@ -23,7 +28,6 @@ async function main() {
       console.log("unfollowed:", event);
     }
   );
-
 
   const subscriptionId_communityCreated = ospProgram.program.addEventListener(
     "communityCreated",

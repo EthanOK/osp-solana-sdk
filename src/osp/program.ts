@@ -3,7 +3,7 @@ import {
   AnchorProvider,
   Program,
   Wallet,
-  web3,
+  web3
 } from "@coral-xyz/anchor";
 import BN from "bn.js";
 import {
@@ -11,13 +11,13 @@ import {
   ComputeBudgetProgram,
   Connection,
   PublicKey,
-  Transaction,
+  Transaction
 } from "@solana/web3.js";
 import { OpenSocial } from "../idl/open_social";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
-  getAssociatedTokenAddressSync,
+  getAssociatedTokenAddressSync
 } from "@solana/spl-token";
 import { getMasterEdition, getMetadata } from "../util/utils";
 import {
@@ -25,36 +25,36 @@ import {
   OSP_MEGAPHONE_TREASURY,
   OSP_PROGRAM_ID,
   TOKEN_METADATA_PROGRAM_ID,
-  USDC,
+  USDC
 } from "./constant";
 
 const additionalComputeBudgetInstruction =
   ComputeBudgetProgram.setComputeUnitLimit({
-    units: 300000,
+    units: 300000
   });
 
 export enum FollowCondition {
   None,
   FollowHandle,
-  FollowersNumber,
+  FollowersNumber
 }
 
 export enum CommentCondition {
   None,
   OnlyFollowers,
-  SameCommunity,
+  SameCommunity
 }
 
 export enum Currency {
   SOL,
-  USDC,
+  USDC
 }
 
 export enum OpenReaction {
   Like,
   VoteUp,
   VoteDown,
-  VoteCancel,
+  VoteCancel
 }
 
 export type TxResult = {
@@ -331,7 +331,7 @@ export class OSPProgram {
         [
           Buffer.from("activity"),
           Buffer.from(profileHandle),
-          new BN(contentCount).toArrayLike(Buffer, "le", 4),
+          new BN(contentCount).toArrayLike(Buffer, "le", 4)
         ],
         this.program.programId
       )[0];
@@ -355,7 +355,7 @@ export class OSPProgram {
         [
           Buffer.from("comment"),
           activityPDA.toBytes(),
-          new BN(commentCounter).toArrayLike(Buffer, "le", 8),
+          new BN(commentCounter).toArrayLike(Buffer, "le", 8)
         ],
         this.program.programId
       )[0];
@@ -376,7 +376,7 @@ export class OSPProgram {
         [
           Buffer.from("megaphone"),
           user.toBuffer(),
-          new BN(contentId).toArrayLike(Buffer, "le", 8),
+          new BN(contentId).toArrayLike(Buffer, "le", 8)
         ],
         this.program.programId
       )[0];
@@ -392,7 +392,7 @@ export class OSPProgram {
   async initializeStorage(): Promise<TxResult> {
     const result: TxResult = {
       txHash: null,
-      error: null,
+      error: null
     };
     try {
       const tx = await this.program.methods
@@ -400,7 +400,7 @@ export class OSPProgram {
         .accountsPartial({
           authority: this.program.provider.publicKey,
           ospStorage: this.getStoragePDA(),
-          systemProgram: web3.SystemProgram.programId,
+          systemProgram: web3.SystemProgram.programId
         })
         .rpc();
       await this.program.provider.connection.confirmTransaction(tx);
@@ -427,7 +427,7 @@ export class OSPProgram {
   ): Promise<TxResult> {
     const result: TxResult = {
       txHash: null,
-      error: null,
+      error: null
     };
     try {
       const user = this.program.provider.publicKey;
@@ -435,9 +435,8 @@ export class OSPProgram {
       const profilePDA = this.getProfilePDA(handle);
       const profileNFT = this.getProfileNFT(profilePDA);
       const profileFollowMint = this.getProfileFollowMint(user);
-      const profileFollowMintAccountInfo = await this.getAccountInfo(
-        profileFollowMint
-      );
+      const profileFollowMintAccountInfo =
+        await this.getAccountInfo(profileFollowMint);
       if (profileFollowMintAccountInfo != null) {
         result.error = `${profileFollowMint}: Already Exist`;
         return result;
@@ -457,7 +456,7 @@ export class OSPProgram {
           .accountsPartial({
             authority: this.program.provider.publicKey,
             ospStorage: this.getStoragePDA(),
-            systemProgram: web3.SystemProgram.programId,
+            systemProgram: web3.SystemProgram.programId
           })
           .transaction();
         transactions.add(transaction_initializeStorage);
@@ -480,7 +479,7 @@ export class OSPProgram {
           systemProgram: web3.SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-          tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+          tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID
         })
         .preInstructions([additionalComputeBudgetInstruction])
         .transaction();
@@ -511,14 +510,13 @@ export class OSPProgram {
   ): Promise<TxResult> {
     const result: TxResult = {
       txHash: null,
-      error: null,
+      error: null
     };
     try {
       const follower = this.program.provider.publicKey;
 
-      const followedProfileAccountInfo = await this.getProfileAccountInfo(
-        followedProfile
-      );
+      const followedProfileAccountInfo =
+        await this.getProfileAccountInfo(followedProfile);
       if (followedProfileAccountInfo == null) {
         result.error = `${followedProfile}: Not Exist`;
         return result;
@@ -540,12 +538,12 @@ export class OSPProgram {
         remainingAccounts.push({
           pubkey: isFollowingProfile,
           isSigner: false,
-          isWritable: true,
+          isWritable: true
         });
         remainingAccounts.push({
           pubkey: isFollowingProfileATA,
           isSigner: false,
-          isWritable: true,
+          isWritable: true
         });
 
         const isFollowingProfileATAAccountInfo = await this.getAccountInfo(
@@ -570,7 +568,7 @@ export class OSPProgram {
           systemProgram: web3.SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-          tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+          tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID
         })
         .preInstructions([additionalComputeBudgetInstruction])
         .remainingAccounts(remainingAccounts)
@@ -597,7 +595,7 @@ export class OSPProgram {
   ) {
     const result: TxResult = {
       txHash: null,
-      error: null,
+      error: null
     };
     try {
       const follower = this.program.provider.publicKey;
@@ -609,7 +607,7 @@ export class OSPProgram {
           followedProfile: followedProfilePDA,
           // followMint,
           // followerTokenAccount,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          tokenProgram: TOKEN_PROGRAM_ID
         })
         .rpc();
       await this.program.provider.connection.confirmTransaction(tx);
@@ -637,7 +635,7 @@ export class OSPProgram {
   ): Promise<TxResult> {
     const result: TxResult = {
       txHash: null,
-      error: null,
+      error: null
     };
     const user = this.program.provider.publicKey;
     let followConditions = null;
@@ -666,7 +664,7 @@ export class OSPProgram {
         .setFollowConditions(followConditions)
         .accountsPartial({
           user: user,
-          profile: profilePDA,
+          profile: profilePDA
         })
         .rpc();
       await this.program.provider.connection.confirmTransaction(tx);
@@ -696,7 +694,7 @@ export class OSPProgram {
   ): Promise<TxResult> {
     const result: TxResult = {
       txHash: null,
-      error: null,
+      error: null
     };
     try {
       const storage = this.getStoragePDA();
@@ -731,7 +729,7 @@ export class OSPProgram {
           systemProgram: web3.SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-          tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+          tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID
         })
         .preInstructions([additionalComputeBudgetInstruction])
         .rpc();
@@ -757,7 +755,7 @@ export class OSPProgram {
   ): Promise<TxResult> {
     const result: TxResult = {
       txHash: null,
-      error: null,
+      error: null
     };
     try {
       const user = this.program.provider.publicKey;
@@ -776,7 +774,7 @@ export class OSPProgram {
           profileAta: userJoinAta,
           systemProgram: web3.SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
-          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID
         })
         .rpc();
       await this.program.provider.connection.confirmTransaction(tx);
@@ -803,7 +801,7 @@ export class OSPProgram {
   ): Promise<TxResult> {
     const result: TxResult = {
       txHash: null,
-      error: null,
+      error: null
     };
 
     try {
@@ -826,7 +824,7 @@ export class OSPProgram {
           joinMint: joinMint,
           joinMintAta: getAssociatedTokenAddress(joinMint, user),
           // activity: this.getActivityPDA(profileAccountInfo.handle,profileAccountInfo.contentCount),
-          systemProgram: web3.SystemProgram.programId,
+          systemProgram: web3.SystemProgram.programId
         })
         .rpc();
       await this.program.provider.connection.confirmTransaction(tx);
@@ -857,16 +855,15 @@ export class OSPProgram {
   ): Promise<TxResult> {
     const result: TxResult = {
       txHash: null,
-      error: null,
+      error: null
     };
     const remainingAccounts = [];
 
     const user = this.program.provider.publicKey;
 
     try {
-      const activityAccountInfo = await this.getActivityAccountInfo(
-        activityPDA
-      );
+      const activityAccountInfo =
+        await this.getActivityAccountInfo(activityPDA);
       if (activityAccountInfo === null) {
         result.error = "Activity Account not exist";
         return result;
@@ -881,9 +878,8 @@ export class OSPProgram {
           result.error = "CommunityPDA must be provided";
           return result;
         }
-        const communityAccountInfo = await this.getCommunityAccountInfo(
-          communityPDA
-        );
+        const communityAccountInfo =
+          await this.getCommunityAccountInfo(communityPDA);
 
         if (communityAccountInfo === null) {
           result.error = "Community Account not exist";
@@ -909,9 +905,8 @@ export class OSPProgram {
           result.error = "followingprofilePDA must be provided";
           return result;
         }
-        const isFollowingProfileAccountInfo = await this.getProfileAccountInfo(
-          followingprofilePDA
-        );
+        const isFollowingProfileAccountInfo =
+          await this.getProfileAccountInfo(followingprofilePDA);
         if (isFollowingProfileAccountInfo === null) {
           result.error = "followingprofile Account not exist";
           return result;
@@ -936,12 +931,12 @@ export class OSPProgram {
             remainingAccounts.push({
               pubkey: followingprofilePDA,
               isSigner: false,
-              isWritable: true,
+              isWritable: true
             });
             remainingAccounts.push({
               pubkey: user_follow_ata,
               isSigner: false,
-              isWritable: true,
+              isWritable: true
             });
           }
         }
@@ -961,7 +956,7 @@ export class OSPProgram {
           joinMint: joinMint,
           joinMintAta: getAssociatedTokenAddress(joinMint, user),
           // comment: commentPDA,
-          systemProgram: web3.SystemProgram.programId,
+          systemProgram: web3.SystemProgram.programId
         })
         .remainingAccounts(remainingAccounts)
         .rpc();
@@ -989,7 +984,7 @@ export class OSPProgram {
   ): Promise<TxResult> {
     const result: TxResult = {
       txHash: null,
-      error: null,
+      error: null
     };
 
     try {
@@ -1014,7 +1009,7 @@ export class OSPProgram {
         .accountsPartial({
           user: user,
           profile: profilePDA,
-          activity: activityPDA,
+          activity: activityPDA
         })
         .rpc();
 
@@ -1042,7 +1037,7 @@ export class OSPProgram {
   ): Promise<TxResult> {
     const result: TxResult = {
       txHash: null,
-      error: null,
+      error: null
     };
     const activityAccountInfo = await this.getActivityAccountInfo(activityPDA);
     if (activityAccountInfo === null) {
@@ -1073,7 +1068,7 @@ export class OSPProgram {
           profile: profilePDA,
           activity: activityPDA,
           // comment: this.getCommentPDA(activityPDA, commentCounter),
-          systemProgram: web3.SystemProgram.programId,
+          systemProgram: web3.SystemProgram.programId
         })
         .rpc();
       await this.program.provider.connection.confirmTransaction(tx);
@@ -1108,7 +1103,7 @@ export class OSPProgram {
   ): Promise<TxResult> {
     const result: TxResult = {
       txHash: null,
-      error: null,
+      error: null
     };
 
     const user = this.program.provider.publicKey;
@@ -1138,7 +1133,7 @@ export class OSPProgram {
           treasury: OSP_MEGAPHONE_TREASURY,
           treasuryAta: treasuryAta,
           systemProgram: web3.SystemProgram.programId,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          tokenProgram: TOKEN_PROGRAM_ID
         })
         .rpc();
       await this.program.provider.connection.confirmTransaction(tx);
@@ -1165,7 +1160,7 @@ export class OSPProgram {
   ): Promise<TxResult> {
     const result: TxResult = {
       txHash: null,
-      error: null,
+      error: null
     };
     let openReaction;
 
@@ -1189,7 +1184,7 @@ export class OSPProgram {
         .accountsPartial({
           user: this.program.provider.publicKey,
           profile: profilePDA,
-          activity: activityPDA,
+          activity: activityPDA
         })
         .rpc();
       await this.program.provider.connection.confirmTransaction(tx);

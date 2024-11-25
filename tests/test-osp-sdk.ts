@@ -9,7 +9,7 @@ import {
   OpenReaction,
   OSP_IDL,
   OSPProgram,
-  requestAirdrop,
+  requestAirdrop
 } from "../src";
 // } from "osp-solana-sdk";
 
@@ -147,9 +147,8 @@ async function main() {
   console.log("createCommunity tx:", createCommunity_tx);
 
   const community2PDA = program2.getCommunityPDA(`community2_${timestamp}`);
-  let communityAccountInfo = await program2.getCommunityAccountInfo(
-    community2PDA
-  );
+  let communityAccountInfo =
+    await program2.getCommunityAccountInfo(community2PDA);
   console.log("community AccountInfo:\n", communityAccountInfo);
 
   // user1 join community2
@@ -159,9 +158,8 @@ async function main() {
   );
   console.log("joinCommunity_tx:", joinCommunity_tx);
 
-  let user2ProfileAccountInfo = await program.getProfileAccountInfo(
-    user2ProfilePDA
-  );
+  let user2ProfileAccountInfo =
+    await program.getProfileAccountInfo(user2ProfilePDA);
   const activityPDA2 = program2.getActivityPDA(
     user2ProfileAccountInfo.handle,
     user2ProfileAccountInfo.contentCount
@@ -187,9 +185,8 @@ async function main() {
   );
   console.log("setCommentConditions_tx:", setCommentConditions_tx);
 
-  const activity2AccountInfo = await program2.getActivityAccountInfo(
-    activityPDA2
-  );
+  const activity2AccountInfo =
+    await program2.getActivityAccountInfo(activityPDA2);
   console.log("Activity2AccountInfo:", activity2AccountInfo);
 
   const createComment_tx = await program2.createComment(
@@ -244,9 +241,8 @@ async function main() {
     user1.publicKey,
     ((activity2AccountInfo as any).contentId as BN).toNumber()
   );
-  const megaphoneAccountInfo = await program.getMegaphoneAccountInfo(
-    megaphonePDA
-  );
+  const megaphoneAccountInfo =
+    await program.getMegaphoneAccountInfo(megaphonePDA);
   console.log("megaphoneAccountInfo:", megaphoneAccountInfo);
 
   const createOpenReaction_tx = await program.createOpenReaction(

@@ -1,11 +1,11 @@
-import { Connection, clusterApiUrl }from "@solana/web3.js";
+import { Connection, clusterApiUrl } from "@solana/web3.js";
 export const getDevConnection = () => {
   const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
   return connection;
 };
 
 export const getLocalConnection = () => {
-  const connection = new Connection("http://127.0.0.1:8899","confirmed");
+  const connection = new Connection("http://127.0.0.1:8899", "confirmed");
   return connection;
 };
 
