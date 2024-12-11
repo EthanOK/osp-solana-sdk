@@ -147,7 +147,7 @@ async function main() {
   console.log("createCommunity tx:", createCommunity_tx);
 
   const community2PDA = program2.getCommunityPDA(`community2_${timestamp}`);
-  let communityAccountInfo =
+  const communityAccountInfo =
     await program2.getCommunityAccountInfo(community2PDA);
   console.log("community AccountInfo:\n", communityAccountInfo);
 
@@ -158,7 +158,7 @@ async function main() {
   );
   console.log("joinCommunity_tx:", joinCommunity_tx);
 
-  let user2ProfileAccountInfo =
+  const user2ProfileAccountInfo =
     await program.getProfileAccountInfo(user2ProfilePDA);
   const activityPDA2 = program2.getActivityPDA(
     user2ProfileAccountInfo.handle,

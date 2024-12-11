@@ -27,27 +27,34 @@
     "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
+    "@eslint/js": "^9.16.0",
     "@types/bn.js": "^5.1.0",
     "@types/chai": "^5.0.0",
     "@types/mocha": "^10.0.9",
     "chai": "^4.5.0",
+    "dotenv": "^16.4.5",
+    "eslint": "^9.16.0",
+    "globals": "^15.13.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.10",
     "prettier": "^3.3.3",
     "ts-mocha": "^10.0.0",
     "tsup": "^8.2.4",
     "typedoc": "^0.26.10",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.18.0"
   },
   "lint-staged": {
     "{src,tests}/**/*.{js,ts,tsx,json,css,md}": [
       "prettier --write",
-      "git add"
+      "eslint --fix"
     ]
   },
   "scripts": {
     "prepare": "husky install",
     "prettier": "prettier --write \"{src,tests}/**/*.{js,ts,tsx,json,css,md}\"",
+    "lint": "eslint \"{src,tests}/**/*.{js,ts,tsx}\"",
+    "lint:fix": "eslint \"{src,tests}/**/*.{js,ts,tsx}\" --fix",
     "build": "tsup ./src/index.ts --format esm,cjs --dts",
     "typedoc": "typedoc src/index.ts",
     "link osp-solana-sdk": "npm link osp-solana-sdk",

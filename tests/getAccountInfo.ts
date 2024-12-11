@@ -5,7 +5,7 @@ async function main() {
   const connection = getLocalConnection();
 
   const program = new OSPProgram(connection, null);
-  let result = await program.getStorageAccountInfo(program.getStoragePDA());
+  const result = await program.getStorageAccountInfo(program.getStoragePDA());
   console.log(result);
 }
 main();

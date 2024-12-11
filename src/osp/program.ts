@@ -75,7 +75,7 @@ export class OSPProgram {
    * @param programId
    */
   constructor(connection: Connection, wallet: Wallet, programId?: PublicKey) {
-    let idl = OSP_IDL;
+    const idl = OSP_IDL;
     const provider = new AnchorProvider(connection, wallet);
     if (programId) {
       idl.address = programId.toString();
@@ -109,11 +109,15 @@ export class OSPProgram {
    * Get storage account info
    * @returns
    */
-  async getStorageAccountInfo(account: PublicKey): Promise<Object | null> {
+  async getStorageAccountInfo(account: PublicKey): Promise<{
+    profileId: BN;
+    communityId: BN;
+    bump: number;
+  } | null> {
     try {
       return await this.program.account.ospStorage.fetch(account);
     } catch (error) {
-      `${account} not is storage account`;
+      console.log(`${account} not is storage account`);
       return null;
     }
   }
@@ -145,7 +149,7 @@ export class OSPProgram {
    * Get community PDA
    * @returns
    */
-  async getCommunityAccountInfo(account: PublicKey): Promise<Object | null> {
+  async getCommunityAccountInfo(account: PublicKey): Promise<object | null> {
     try {
       return await this.program.account.community.fetch(account);
     } catch (error) {
@@ -158,7 +162,7 @@ export class OSPProgram {
    * Get activity PDA
    * @returns
    */
-  async getActivityAccountInfo(account: PublicKey): Promise<Object | null> {
+  async getActivityAccountInfo(account: PublicKey): Promise<object | null> {
     try {
       return await this.program.account.activity.fetch(account);
     } catch (error) {
@@ -171,7 +175,7 @@ export class OSPProgram {
    * Get comment PDA
    * @returns
    */
-  async getCommentAccountInfo(account: PublicKey): Promise<Object | null> {
+  async getCommentAccountInfo(account: PublicKey): Promise<object | null> {
     try {
       return await this.program.account.comment.fetch(account);
     } catch (error) {
@@ -184,7 +188,7 @@ export class OSPProgram {
    * Get megaphone PDA
    * @returns
    */
-  async getMegaphoneAccountInfo(account: PublicKey): Promise<Object | null> {
+  async getMegaphoneAccountInfo(account: PublicKey): Promise<object | null> {
     try {
       return await this.program.account.megaphone.fetch(account);
     } catch (error) {
@@ -553,7 +557,10 @@ export class OSPProgram {
           result.error = `${handle}: isFollowingProfile ATA Not Exist`;
           return result;
         }
-      } catch (error) {}
+      } catch (error) {
+        result.error = `remainingAccounts error`;
+        return result;
+      }
 
       const destination = getAssociatedTokenAddressSync(followedMint, follower);
 
@@ -656,6 +663,7 @@ export class OSPProgram {
             return result;
           }
           followConditions = { minimumFollowers: { 0: param } };
+          break;
         default:
           break;
       }
@@ -941,7 +949,10 @@ export class OSPProgram {
           }
         }
       }
-    } catch (error) {}
+    } catch (error) {
+      result.error = `createComment unknown error`;
+      return result;
+    }
 
     try {
       const joinMint = this.getCommunityJoinMint(communityPDA);
@@ -1000,6 +1011,7 @@ export class OSPProgram {
           break;
         case CommentCondition.SameCommunity:
           commentConditions = { sameCommunity: {} };
+          break;
         default:
           break;
       }
