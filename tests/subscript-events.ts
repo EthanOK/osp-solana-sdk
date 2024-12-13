@@ -10,7 +10,8 @@ async function main() {
   const ospProgram = new OSPProgram(connection, null);
   const subscriptionId_profileCreated = ospProgram.program.addEventListener(
     "profileCreated",
-    (event) => {
+    (event, slot, signature) => {
+      console.log("slot:", slot, "signature:", signature);
       console.log("profileCreated:", event);
     }
   );
